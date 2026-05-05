@@ -1,4 +1,4 @@
-package br.com.itau.calculadoratributos;
+package br.com.itau.geradornotafiscal;
 
 import br.com.itau.geradornotafiscal.model.*;
 import br.com.itau.geradornotafiscal.service.CalculadoraAliquotaProduto;
