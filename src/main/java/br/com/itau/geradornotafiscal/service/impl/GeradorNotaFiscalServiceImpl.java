@@ -12,15 +12,19 @@ import java.util.UUID;
 
 @Service
 public class GeradorNotaFiscalServiceImpl implements GeradorNotaFiscalService{
+
+	private final CalculadoraAliquotaProduto calculadoraAliquotaProduto;
+
+	public GeradorNotaFiscalServiceImpl(CalculadoraAliquotaProduto calculadoraAliquotaProduto) {
+		this.calculadoraAliquotaProduto = calculadoraAliquotaProduto;
+	}
+
 	@Override
 	public NotaFiscal gerarNotaFiscal(Pedido pedido) {
 
 		Destinatario destinatario = pedido.getDestinatario();
 		TipoPessoa tipoPessoa = destinatario.getTipoPessoa();
 		List<ItemNotaFiscal> itemNotaFiscalList = new ArrayList<>();
-
-
-		CalculadoraAliquotaProduto calculadoraAliquotaProduto = new CalculadoraAliquotaProduto();
 
 		if (tipoPessoa == TipoPessoa.FISICA) {
 			double valorTotalItens = pedido.getValorTotalItens();

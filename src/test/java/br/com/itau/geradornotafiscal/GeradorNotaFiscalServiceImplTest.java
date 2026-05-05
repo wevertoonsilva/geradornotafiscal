@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 
 public class GeradorNotaFiscalServiceImplTest {
@@ -54,6 +56,8 @@ public class GeradorNotaFiscalServiceImplTest {
         item.setQuantidade(4);
         pedido.setItens(Arrays.asList(item));
 
+        when(calculadoraAliquotaProduto.calcularAliquota(anyList(), anyDouble())).thenReturn(Arrays.asList(new ItemNotaFiscal()));
+
         NotaFiscal notaFiscal = geradorNotaFiscalService.gerarNotaFiscal(pedido);
 
         assertEquals(pedido.getValorTotalItens(), notaFiscal.getValorTotalItens());
@@ -83,6 +87,8 @@ public class GeradorNotaFiscalServiceImplTest {
         item.setValorUnitario(1000);
         item.setQuantidade(6);
         pedido.setItens(Arrays.asList(item));
+
+        when(calculadoraAliquotaProduto.calcularAliquota(anyList(), anyDouble())).thenReturn(Arrays.asList(ItemNotaFiscal.builder().valorTributoItem(0.20 * item.getValorUnitario()).build()));
 
         NotaFiscal notaFiscal = geradorNotaFiscalService.gerarNotaFiscal(pedido);
 
