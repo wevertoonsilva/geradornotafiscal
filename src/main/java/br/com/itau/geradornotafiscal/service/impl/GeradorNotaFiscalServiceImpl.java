@@ -6,11 +6,14 @@ import br.com.itau.geradornotafiscal.port.out.EstoquePort;
 import br.com.itau.geradornotafiscal.port.out.FinanceiroPort;
 import br.com.itau.geradornotafiscal.port.out.RegistroPort;
 import br.com.itau.geradornotafiscal.service.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.concurrent.Executors;
 
+@Slf4j
 @Service
 public class GeradorNotaFiscalServiceImpl implements GeradorNotaFiscalService{
 
@@ -56,10 +59,36 @@ public class GeradorNotaFiscalServiceImpl implements GeradorNotaFiscalService{
 
 		NotaFiscal notaFiscal = notaFiscalFactory.criar(pedido, itemNotaFiscalList, valorFreteComPercentual);
 
-		estoquePort.enviarNotaFiscalParaBaixaEstoque(notaFiscal);
-		registroPort.registrarNotaFiscal(notaFiscal);
-		entregaPort.agendarEntrega(notaFiscal);
-		financeiroPort.enviarNotaFiscalParaContasReceber(notaFiscal);
+		try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+			executor.submit(() -> {
+				try {
+					estoquePort.enviarNotaFiscalParaBaixaEstoque(notaFiscal);
+				} catch (Exception e) {
+					log.error("Falha ao baixar estoque - idNota={}", notaFiscal.getIdNotaFiscal(), e);
+				}
+			});
+			executor.submit(() -> {
+				try {
+					registroPort.registrarNotaFiscal(notaFiscal);
+				} catch (Exception e) {
+					log.error("Falha ao registrar nota fiscal - idNota={}", notaFiscal.getIdNotaFiscal(), e);
+				}
+			});
+			executor.submit(() -> {
+				try {
+					entregaPort.agendarEntrega(notaFiscal);
+				} catch (Exception e) {
+					log.error("Falha ao agendar entrega - idNota={}", notaFiscal.getIdNotaFiscal(), e);
+				}
+			});
+			executor.submit(() -> {
+				try {
+					financeiroPort.enviarNotaFiscalParaContasReceber(notaFiscal);
+				} catch (Exception e) {
+					log.error("Falha ao enviar para o financeiro - idNota={}", notaFiscal.getIdNotaFiscal(), e);
+				}
+			});
+		}
 
 		return notaFiscal;
 	}
