@@ -1,6 +1,10 @@
 package br.com.itau.geradornotafiscal;
 
 import br.com.itau.geradornotafiscal.model.*;
+import br.com.itau.geradornotafiscal.port.out.EntregaPort;
+import br.com.itau.geradornotafiscal.port.out.EstoquePort;
+import br.com.itau.geradornotafiscal.port.out.FinanceiroPort;
+import br.com.itau.geradornotafiscal.port.out.RegistroPort;
 import br.com.itau.geradornotafiscal.service.CalculadoraAliquotaProduto;
 import br.com.itau.geradornotafiscal.service.impl.GeradorNotaFiscalServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +30,18 @@ public class GeradorNotaFiscalServiceImplTest {
 
     @Mock
     private CalculadoraAliquotaProduto calculadoraAliquotaProduto;
+
+    @Mock
+    private EstoquePort estoquePort;
+
+    @Mock
+    private RegistroPort registroPort;
+
+    @Mock
+    private EntregaPort entregaPort;
+
+    @Mock
+    private FinanceiroPort financeiroPort;
 
     @BeforeEach
     public void setup() {

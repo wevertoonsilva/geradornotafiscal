@@ -1,8 +1,12 @@
 package br.com.itau.geradornotafiscal.service.impl;
 
 import br.com.itau.geradornotafiscal.model.NotaFiscal;
+import br.com.itau.geradornotafiscal.port.out.FinanceiroPort;
+import org.springframework.stereotype.Service;
 
-public class FinanceiroService {
+@Service
+public class FinanceiroService implements FinanceiroPort {
+    @Override
     public void enviarNotaFiscalParaContasReceber(NotaFiscal notaFiscal) {
 
         try {

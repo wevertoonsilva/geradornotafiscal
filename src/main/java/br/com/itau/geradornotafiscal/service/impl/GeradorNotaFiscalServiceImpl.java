@@ -1,6 +1,10 @@
 package br.com.itau.geradornotafiscal.service.impl;
 
 import br.com.itau.geradornotafiscal.model.*;
+import br.com.itau.geradornotafiscal.port.out.EntregaPort;
+import br.com.itau.geradornotafiscal.port.out.EstoquePort;
+import br.com.itau.geradornotafiscal.port.out.FinanceiroPort;
+import br.com.itau.geradornotafiscal.port.out.RegistroPort;
 import br.com.itau.geradornotafiscal.service.CalculadoraAliquotaProduto;
 import br.com.itau.geradornotafiscal.service.GeradorNotaFiscalService;
 import org.springframework.stereotype.Service;
@@ -15,8 +19,22 @@ public class GeradorNotaFiscalServiceImpl implements GeradorNotaFiscalService{
 
 	private final CalculadoraAliquotaProduto calculadoraAliquotaProduto;
 
-	public GeradorNotaFiscalServiceImpl(CalculadoraAliquotaProduto calculadoraAliquotaProduto) {
+	private final EstoquePort estoquePort;
+	private final RegistroPort registroPort;
+	private final EntregaPort entregaPort;
+	private final FinanceiroPort financeiroPort;
+
+	public GeradorNotaFiscalServiceImpl(
+			CalculadoraAliquotaProduto calculadoraAliquotaProduto,
+			EstoquePort estoquePort,
+			RegistroPort registroPort,
+			EntregaPort entregaPort,
+			FinanceiroPort financeiroPort) {
 		this.calculadoraAliquotaProduto = calculadoraAliquotaProduto;
+		this.estoquePort = estoquePort;
+		this.registroPort = registroPort;
+		this.entregaPort = entregaPort;
+		this.financeiroPort = financeiroPort;
 	}
 
 	@Override
@@ -124,10 +142,10 @@ public class GeradorNotaFiscalServiceImpl implements GeradorNotaFiscalService{
 				.destinatario(pedido.getDestinatario())
 				.build();
 
-		new EstoqueService().enviarNotaFiscalParaBaixaEstoque(notaFiscal);
-		new RegistroService().registrarNotaFiscal(notaFiscal);
-		new EntregaService().agendarEntrega(notaFiscal);
-		new FinanceiroService().enviarNotaFiscalParaContasReceber(notaFiscal);
+		estoquePort.enviarNotaFiscalParaBaixaEstoque(notaFiscal);
+		registroPort.registrarNotaFiscal(notaFiscal);
+		entregaPort.agendarEntrega(notaFiscal);
+		financeiroPort.enviarNotaFiscalParaContasReceber(notaFiscal);
 
 		return notaFiscal;
 	}

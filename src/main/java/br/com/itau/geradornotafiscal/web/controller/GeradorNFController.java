@@ -16,8 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/pedido")
 public class GeradorNFController {
 
-	@Autowired
-	private GeradorNotaFiscalService notaFiscalService;
+	private final GeradorNotaFiscalService notaFiscalService;
+
+	public GeradorNFController(GeradorNotaFiscalService notaFiscalService) {
+		this.notaFiscalService = notaFiscalService;
+	}
 
 	@PostMapping("/gerarNotaFiscal")
 	public ResponseEntity<NotaFiscal> gerarNotaFiscal(@RequestBody Pedido pedido) {
