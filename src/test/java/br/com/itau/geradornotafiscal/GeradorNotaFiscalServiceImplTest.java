@@ -18,6 +18,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,7 +27,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -63,7 +65,7 @@ public class GeradorNotaFiscalServiceImplTest {
 
     @ParameterizedTest
     @MethodSource("provideTestData")
-    public void shouldGenerateNotaFiscalWithCorrectAliquota(TipoPessoa tipoPessoa, RegimeTributacaoPJ regime, double valorTotal, double expectedAliquota) {
+    public void shouldGenerateNotaFiscalWithCorrectAliquota(TipoPessoa tipoPessoa, RegimeTributacaoPJ regime, BigDecimal valorTotal, BigDecimal expectedAliquota) {
         // Arrange
         Item item = new Item();
         item.setValorUnitario(valorTotal);
@@ -83,7 +85,7 @@ public class GeradorNotaFiscalServiceImplTest {
 
         Pedido pedido = Pedido.builder()
                 .valorTotalItens(valorTotal)
-                .valorFrete(100.0)
+                .valorFrete(new BigDecimal("100.00"))
                 .destinatario(destinatario)
                 .itens(itens)
                 .build();
@@ -91,20 +93,21 @@ public class GeradorNotaFiscalServiceImplTest {
         List<ItemNotaFiscal> itensNF = itens.stream().map(i -> ItemNotaFiscal.builder()
                 .valorUnitario(i.getValorUnitario())
                 .quantidade(i.getQuantidade())
-                .valorTributoItem(i.getValorUnitario() * i.getQuantidade() * expectedAliquota)
+                .valorTributoItem(i.getValorUnitario().multiply(expectedAliquota).setScale(2, RoundingMode.HALF_UP))
                 .build()).collect(Collectors.toList());
 
         when(calculadoraAliquotaProduto.calcularAliquota(eq(itens), eq(expectedAliquota))).thenReturn(itensNF);
-        when(calculadoraFrete.calcular(eq(destinatario), anyDouble())).thenReturn(100.0 * 1.048);
+        BigDecimal valorFreteEsperado = new BigDecimal("100.00").multiply(new BigDecimal("1.048")).setScale(2, RoundingMode.HALF_UP);
+        when(calculadoraFrete.calcular(eq(destinatario), any(BigDecimal.class))).thenReturn(valorFreteEsperado);
 
         NotaFiscal notaFiscalMock = NotaFiscal.builder()
                 .idNotaFiscal("teste-id")
                 .valorTotalItens(valorTotal)
-                .valorFrete(100.0 * 1.048)
+                .valorFrete(valorFreteEsperado)
                 .itens(itensNF)
                 .destinatario(destinatario)
                 .build();
-        when(notaFiscalFactory.criar(eq(pedido), eq(itensNF), anyDouble())).thenReturn(notaFiscalMock);
+        when(notaFiscalFactory.criar(eq(pedido), eq(itensNF), any(BigDecimal.class))).thenReturn(notaFiscalMock);
 
         // Act
         NotaFiscal notaFiscal = geradorNotaFiscalService.gerarNotaFiscal(pedido);
@@ -112,7 +115,7 @@ public class GeradorNotaFiscalServiceImplTest {
         // Assert
         assertNotNull(notaFiscal);
         assertEquals(valorTotal, notaFiscal.getValorTotalItens());
-        assertEquals(100.0 * 1.048, notaFiscal.getValorFrete(), 0.001);
+        assertEquals(valorFreteEsperado, notaFiscal.getValorFrete());
         assertEquals(itensNF.size(), notaFiscal.getItens().size());
         assertEquals(itensNF.get(0).getValorTributoItem(), notaFiscal.getItens().get(0).getValorTributoItem());
 
@@ -125,36 +128,36 @@ public class GeradorNotaFiscalServiceImplTest {
     private static Stream<Arguments> provideTestData() {
         return Stream.of(
                 // PF
-                Arguments.of(TipoPessoa.FISICA, null, 499.99, 0.0),
-                Arguments.of(TipoPessoa.FISICA, null, 500.0, 0.12),
-                Arguments.of(TipoPessoa.FISICA, null, 2000.0, 0.12),
-                Arguments.of(TipoPessoa.FISICA, null, 2000.01, 0.15),
-                Arguments.of(TipoPessoa.FISICA, null, 3500.0, 0.15),
-                Arguments.of(TipoPessoa.FISICA, null, 3500.01, 0.17),
+                Arguments.of(TipoPessoa.FISICA, null, new BigDecimal("499.99"), new BigDecimal("0.0000").setScale(4, RoundingMode.HALF_UP)),
+                Arguments.of(TipoPessoa.FISICA, null, new BigDecimal("500.00"), new BigDecimal("0.1200").setScale(4, RoundingMode.HALF_UP)),
+                Arguments.of(TipoPessoa.FISICA, null, new BigDecimal("2000.00"), new BigDecimal("0.1200").setScale(4, RoundingMode.HALF_UP)),
+                Arguments.of(TipoPessoa.FISICA, null, new BigDecimal("2000.01"), new BigDecimal("0.1500").setScale(4, RoundingMode.HALF_UP)),
+                Arguments.of(TipoPessoa.FISICA, null, new BigDecimal("3500.00"), new BigDecimal("0.1500").setScale(4, RoundingMode.HALF_UP)),
+                Arguments.of(TipoPessoa.FISICA, null, new BigDecimal("3500.01"), new BigDecimal("0.1700").setScale(4, RoundingMode.HALF_UP)),
 
                 // PJ Simples Nacional
-                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.SIMPLES_NACIONAL, 999.99, 0.03),
-                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.SIMPLES_NACIONAL, 1000.0, 0.07),
-                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.SIMPLES_NACIONAL, 2000.0, 0.07),
-                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.SIMPLES_NACIONAL, 2000.01, 0.13),
-                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.SIMPLES_NACIONAL, 5000.0, 0.13),
-                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.SIMPLES_NACIONAL, 5000.01, 0.19),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.SIMPLES_NACIONAL, new BigDecimal("999.99"), new BigDecimal("0.0300").setScale(4, RoundingMode.HALF_UP)),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.SIMPLES_NACIONAL, new BigDecimal("1000.00"), new BigDecimal("0.0700").setScale(4, RoundingMode.HALF_UP)),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.SIMPLES_NACIONAL, new BigDecimal("2000.00"), new BigDecimal("0.0700").setScale(4, RoundingMode.HALF_UP)),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.SIMPLES_NACIONAL, new BigDecimal("2000.01"), new BigDecimal("0.1300").setScale(4, RoundingMode.HALF_UP)),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.SIMPLES_NACIONAL, new BigDecimal("5000.00"), new BigDecimal("0.1300").setScale(4, RoundingMode.HALF_UP)),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.SIMPLES_NACIONAL, new BigDecimal("5000.01"), new BigDecimal("0.1900").setScale(4, RoundingMode.HALF_UP)),
 
                 // PJ Lucro Real
-                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_REAL, 999.99, 0.03),
-                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_REAL, 1000.0, 0.09),
-                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_REAL, 2000.0, 0.09),
-                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_REAL, 2000.01, 0.15),
-                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_REAL, 5000.0, 0.15),
-                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_REAL, 5000.01, 0.20),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_REAL, new BigDecimal("999.99"), new BigDecimal("0.0300").setScale(4, RoundingMode.HALF_UP)),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_REAL, new BigDecimal("1000.00"), new BigDecimal("0.0900").setScale(4, RoundingMode.HALF_UP)),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_REAL, new BigDecimal("2000.00"), new BigDecimal("0.0900").setScale(4, RoundingMode.HALF_UP)),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_REAL, new BigDecimal("2000.01"), new BigDecimal("0.1500").setScale(4, RoundingMode.HALF_UP)),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_REAL, new BigDecimal("5000.00"), new BigDecimal("0.1500").setScale(4, RoundingMode.HALF_UP)),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_REAL, new BigDecimal("5000.01"), new BigDecimal("0.2000").setScale(4, RoundingMode.HALF_UP)),
 
                 // PJ Lucro Presumido
-                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_PRESUMIDO, 999.99, 0.03),
-                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_PRESUMIDO, 1000.0, 0.09),
-                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_PRESUMIDO, 2000.0, 0.09),
-                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_PRESUMIDO, 2000.01, 0.16),
-                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_PRESUMIDO, 5000.0, 0.16),
-                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_PRESUMIDO, 5000.01, 0.20)
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_PRESUMIDO, new BigDecimal("999.99"), new BigDecimal("0.0300").setScale(4, RoundingMode.HALF_UP)),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_PRESUMIDO, new BigDecimal("1000.00"), new BigDecimal("0.0900").setScale(4, RoundingMode.HALF_UP)),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_PRESUMIDO, new BigDecimal("2000.00"), new BigDecimal("0.0900").setScale(4, RoundingMode.HALF_UP)),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_PRESUMIDO, new BigDecimal("2000.01"), new BigDecimal("0.1600").setScale(4, RoundingMode.HALF_UP)),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_PRESUMIDO, new BigDecimal("5000.00"), new BigDecimal("0.1600").setScale(4, RoundingMode.HALF_UP)),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_PRESUMIDO, new BigDecimal("5000.01"), new BigDecimal("0.2000").setScale(4, RoundingMode.HALF_UP))
         );
     }
 }

@@ -8,6 +8,7 @@ import br.com.itau.geradornotafiscal.port.out.RegistroPort;
 import br.com.itau.geradornotafiscal.service.*;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -47,11 +48,11 @@ public class GeradorNotaFiscalServiceImpl implements GeradorNotaFiscalService{
 		RegimeTributacaoPJ regimeTributacao = destinatario.getRegimeTributacao();
 
 		AliquotaStrategy strategy = AliquotaStrategyFactory.getStrategy(tipoPessoa, regimeTributacao);
-		double aliquota = strategy.calcularAliquota(pedido.getValorTotalItens());
+		BigDecimal aliquota = strategy.calcularAliquota(pedido.getValorTotalItens());
 
 		List<ItemNotaFiscal> itemNotaFiscalList = calculadoraAliquotaProduto.calcularAliquota(pedido.getItens(), aliquota);
 
-		double valorFreteComPercentual = calculadoraFrete.calcular(destinatario, pedido.getValorFrete());
+		BigDecimal valorFreteComPercentual = calculadoraFrete.calcular(destinatario, pedido.getValorFrete());
 
 		NotaFiscal notaFiscal = notaFiscalFactory.criar(pedido, itemNotaFiscalList, valorFreteComPercentual);
 

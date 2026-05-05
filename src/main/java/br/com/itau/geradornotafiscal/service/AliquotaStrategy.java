@@ -1,5 +1,7 @@
 package br.com.itau.geradornotafiscal.service;
 
+import java.math.BigDecimal;
+
 public interface AliquotaStrategy {
-    double calcularAliquota(double valorTotalItens);
+    BigDecimal calcularAliquota(BigDecimal valorTotalItens);
 }

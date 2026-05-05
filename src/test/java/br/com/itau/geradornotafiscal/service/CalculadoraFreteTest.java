@@ -7,6 +7,8 @@ import br.com.itau.geradornotafiscal.model.Regiao;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.List;
 
@@ -25,36 +27,36 @@ public class CalculadoraFreteTest {
     @Test
     public void deveCalcularFreteParaRegiaoNorte() {
         Destinatario destinatario = criarDestinatarioComRegiao(Regiao.NORTE);
-        double resultado = calculadora.calcular(destinatario, 100.0);
-        assertEquals(108.0, resultado, 0.001);
+        BigDecimal resultado = calculadora.calcular(destinatario, new BigDecimal("100.00"));
+        assertEquals(new BigDecimal("108.00"), resultado);
     }
 
     @Test
     public void deveCalcularFreteParaRegiaoNordeste() {
         Destinatario destinatario = criarDestinatarioComRegiao(Regiao.NORDESTE);
-        double resultado = calculadora.calcular(destinatario, 100.0);
-        assertEquals(108.5, resultado, 0.001);
+        BigDecimal resultado = calculadora.calcular(destinatario, new BigDecimal("100.00"));
+        assertEquals(new BigDecimal("108.50"), resultado);
     }
 
     @Test
     public void deveCalcularFreteParaRegiaoCentroOeste() {
         Destinatario destinatario = criarDestinatarioComRegiao(Regiao.CENTRO_OESTE);
-        double resultado = calculadora.calcular(destinatario, 100.0);
-        assertEquals(107.0, resultado, 0.001);
+        BigDecimal resultado = calculadora.calcular(destinatario, new BigDecimal("100.00"));
+        assertEquals(new BigDecimal("107.00"), resultado);
     }
 
     @Test
     public void deveCalcularFreteParaRegiaoSudeste() {
         Destinatario destinatario = criarDestinatarioComRegiao(Regiao.SUDESTE);
-        double resultado = calculadora.calcular(destinatario, 100.0);
-        assertEquals(104.8, resultado, 0.001);
+        BigDecimal resultado = calculadora.calcular(destinatario, new BigDecimal("100.00"));
+        assertEquals(new BigDecimal("104.80"), resultado);
     }
 
     @Test
     public void deveCalcularFreteParaRegiaoSul() {
         Destinatario destinatario = criarDestinatarioComRegiao(Regiao.SUL);
-        double resultado = calculadora.calcular(destinatario, 100.0);
-        assertEquals(106.0, resultado, 0.001);
+        BigDecimal resultado = calculadora.calcular(destinatario, new BigDecimal("100.00"));
+        assertEquals(new BigDecimal("106.00"), resultado);
     }
 
     @Test
@@ -63,7 +65,7 @@ public class CalculadoraFreteTest {
                 .enderecos(Collections.emptyList())
                 .build();
         
-        assertThrows(IllegalArgumentException.class, () -> calculadora.calcular(destinatario, 100.0));
+        assertThrows(IllegalArgumentException.class, () -> calculadora.calcular(destinatario, new BigDecimal("100.00")));
     }
 
     @Test
@@ -76,7 +78,7 @@ public class CalculadoraFreteTest {
                 .enderecos(List.of(endereco))
                 .build();
 
-        assertThrows(IllegalArgumentException.class, () -> calculadora.calcular(destinatario, 100.0));
+        assertThrows(IllegalArgumentException.class, () -> calculadora.calcular(destinatario, new BigDecimal("100.00")));
     }
 
     private Destinatario criarDestinatarioComRegiao(Regiao regiao) {

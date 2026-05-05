@@ -3,6 +3,9 @@ package br.com.itau.geradornotafiscal.service.impl;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class SimplesNacionalAliquotaStrategyTest {
@@ -11,17 +14,18 @@ class SimplesNacionalAliquotaStrategyTest {
 
     @ParameterizedTest
     @CsvSource({
-            "999.99, 0.03",
-            "1000.0, 0.07",
-            "1500.0, 0.07",
-            "2000.0, 0.07",
-            "2000.01, 0.13",
-            "3500.0, 0.13",
-            "5000.0, 0.13",
-            "5000.01, 0.19",
-            "10000.0, 0.19"
+            "999.99, 0.0300",
+            "1000.0, 0.0700",
+            "1500.0, 0.0700",
+            "2000.0, 0.0700",
+            "2000.01, 0.1300",
+            "3500.0, 0.1300",
+            "5000.0, 0.1300",
+            "5000.01, 0.1900",
+            "10000.0, 0.1900"
     })
-    void calcularAliquota(double valor, double expected) {
-        assertEquals(expected, strategy.calcularAliquota(valor), 0.0001);
+    void calcularAliquota(String valor, String expected) {
+        BigDecimal expectedAliquota = new BigDecimal(expected).setScale(4, RoundingMode.HALF_UP);
+        assertEquals(expectedAliquota, strategy.calcularAliquota(new BigDecimal(valor)));
     }
 }

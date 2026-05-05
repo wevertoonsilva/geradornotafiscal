@@ -2,17 +2,20 @@ package br.com.itau.geradornotafiscal.service.impl;
 
 import br.com.itau.geradornotafiscal.service.AliquotaStrategy;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 public class LucroPresumidoAliquotaStrategy implements AliquotaStrategy {
     @Override
-    public double calcularAliquota(double valorTotalItens) {
-        if (valorTotalItens < 1000) {
-            return 0.03;
-        } else if (valorTotalItens <= 2000) {
-            return 0.09;
-        } else if (valorTotalItens <= 5000) {
-            return 0.16;
+    public BigDecimal calcularAliquota(BigDecimal valorTotalItens) {
+        if (valorTotalItens.compareTo(new BigDecimal("1000")) < 0) {
+            return new BigDecimal("0.03").setScale(4, RoundingMode.HALF_UP);
+        } else if (valorTotalItens.compareTo(new BigDecimal("2000")) <= 0) {
+            return new BigDecimal("0.09").setScale(4, RoundingMode.HALF_UP);
+        } else if (valorTotalItens.compareTo(new BigDecimal("5000")) <= 0) {
+            return new BigDecimal("0.16").setScale(4, RoundingMode.HALF_UP);
         } else {
-            return 0.20;
+            return new BigDecimal("0.20").setScale(4, RoundingMode.HALF_UP);
         }
     }
 }
