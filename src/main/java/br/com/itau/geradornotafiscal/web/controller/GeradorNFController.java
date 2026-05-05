@@ -1,6 +1,7 @@
 package br.com.itau.geradornotafiscal.web.controller;
 
 import br.com.itau.geradornotafiscal.model.NotaFiscal;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import br.com.itau.geradornotafiscal.model.Pedido;
@@ -23,7 +24,7 @@ public class GeradorNFController {
 	}
 
 	@PostMapping("/gerarNotaFiscal")
-	public ResponseEntity<NotaFiscal> gerarNotaFiscal(@RequestBody Pedido pedido) {
+	public ResponseEntity<NotaFiscal> gerarNotaFiscal(@Valid @RequestBody Pedido pedido) {
 		// Lógica de processamento do pedido
 		// Aqui você pode realizar as operações desejadas com o objeto Pedido
 
