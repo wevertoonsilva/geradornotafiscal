@@ -5,23 +5,17 @@ import br.com.itau.geradornotafiscal.port.out.EntregaPort;
 import br.com.itau.geradornotafiscal.port.out.EstoquePort;
 import br.com.itau.geradornotafiscal.port.out.FinanceiroPort;
 import br.com.itau.geradornotafiscal.port.out.RegistroPort;
-import br.com.itau.geradornotafiscal.service.AliquotaStrategy;
-import br.com.itau.geradornotafiscal.service.AliquotaStrategyFactory;
-import br.com.itau.geradornotafiscal.service.CalculadoraAliquotaProduto;
-import br.com.itau.geradornotafiscal.service.CalculadoraFrete;
-import br.com.itau.geradornotafiscal.service.GeradorNotaFiscalService;
+import br.com.itau.geradornotafiscal.service.*;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class GeradorNotaFiscalServiceImpl implements GeradorNotaFiscalService{
 
 	private final CalculadoraAliquotaProduto calculadoraAliquotaProduto;
 	private final CalculadoraFrete calculadoraFrete;
+	private final NotaFiscalFactory notaFiscalFactory;
 
 	private final EstoquePort estoquePort;
 	private final RegistroPort registroPort;
@@ -31,12 +25,14 @@ public class GeradorNotaFiscalServiceImpl implements GeradorNotaFiscalService{
 	public GeradorNotaFiscalServiceImpl(
 			CalculadoraAliquotaProduto calculadoraAliquotaProduto,
 			CalculadoraFrete calculadoraFrete,
+			NotaFiscalFactory notaFiscalFactory,
 			EstoquePort estoquePort,
 			RegistroPort registroPort,
 			EntregaPort entregaPort,
 			FinanceiroPort financeiroPort) {
 		this.calculadoraAliquotaProduto = calculadoraAliquotaProduto;
 		this.calculadoraFrete = calculadoraFrete;
+		this.notaFiscalFactory = notaFiscalFactory;
 		this.estoquePort = estoquePort;
 		this.registroPort = registroPort;
 		this.entregaPort = entregaPort;
@@ -57,17 +53,7 @@ public class GeradorNotaFiscalServiceImpl implements GeradorNotaFiscalService{
 
 		double valorFreteComPercentual = calculadoraFrete.calcular(destinatario, pedido.getValorFrete());
 
-		// Create the NotaFiscal object
-		String idNotaFiscal = UUID.randomUUID().toString();
-
-		NotaFiscal notaFiscal = NotaFiscal.builder()
-				.idNotaFiscal(idNotaFiscal)
-				.data(LocalDateTime.now())
-				.valorTotalItens(pedido.getValorTotalItens())
-				.valorFrete(valorFreteComPercentual)
-				.itens(itemNotaFiscalList)
-				.destinatario(pedido.getDestinatario())
-				.build();
+		NotaFiscal notaFiscal = notaFiscalFactory.criar(pedido, itemNotaFiscalList, valorFreteComPercentual);
 
 		estoquePort.enviarNotaFiscalParaBaixaEstoque(notaFiscal);
 		registroPort.registrarNotaFiscal(notaFiscal);
