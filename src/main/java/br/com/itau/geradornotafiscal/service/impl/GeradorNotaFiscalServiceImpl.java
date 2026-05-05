@@ -8,6 +8,7 @@ import br.com.itau.geradornotafiscal.port.out.RegistroPort;
 import br.com.itau.geradornotafiscal.service.AliquotaStrategy;
 import br.com.itau.geradornotafiscal.service.AliquotaStrategyFactory;
 import br.com.itau.geradornotafiscal.service.CalculadoraAliquotaProduto;
+import br.com.itau.geradornotafiscal.service.CalculadoraFrete;
 import br.com.itau.geradornotafiscal.service.GeradorNotaFiscalService;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,7 @@ import java.util.UUID;
 public class GeradorNotaFiscalServiceImpl implements GeradorNotaFiscalService{
 
 	private final CalculadoraAliquotaProduto calculadoraAliquotaProduto;
+	private final CalculadoraFrete calculadoraFrete;
 
 	private final EstoquePort estoquePort;
 	private final RegistroPort registroPort;
@@ -28,11 +30,13 @@ public class GeradorNotaFiscalServiceImpl implements GeradorNotaFiscalService{
 
 	public GeradorNotaFiscalServiceImpl(
 			CalculadoraAliquotaProduto calculadoraAliquotaProduto,
+			CalculadoraFrete calculadoraFrete,
 			EstoquePort estoquePort,
 			RegistroPort registroPort,
 			EntregaPort entregaPort,
 			FinanceiroPort financeiroPort) {
 		this.calculadoraAliquotaProduto = calculadoraAliquotaProduto;
+		this.calculadoraFrete = calculadoraFrete;
 		this.estoquePort = estoquePort;
 		this.registroPort = registroPort;
 		this.entregaPort = entregaPort;
@@ -50,28 +54,8 @@ public class GeradorNotaFiscalServiceImpl implements GeradorNotaFiscalService{
 		double aliquota = strategy.calcularAliquota(pedido.getValorTotalItens());
 
 		List<ItemNotaFiscal> itemNotaFiscalList = calculadoraAliquotaProduto.calcularAliquota(pedido.getItens(), aliquota);
-		//Regras diferentes para frete
 
-		Regiao regiao = destinatario.getEnderecos().stream()
-				.filter(endereco -> endereco.getFinalidade() == Finalidade.ENTREGA || endereco.getFinalidade() == Finalidade.COBRANCA_ENTREGA)
-				.map(Endereco::getRegiao)
-				.findFirst()
-				.orElse(null);
-
-		double valorFrete = pedido.getValorFrete();
-		double valorFreteComPercentual =0;
-
-		if (regiao == Regiao.NORTE) {
-			valorFreteComPercentual = valorFrete * 1.08;
-		} else if (regiao == Regiao.NORDESTE) {
-			valorFreteComPercentual = valorFrete * 1.085;
-		} else if (regiao == Regiao.CENTRO_OESTE) {
-			valorFreteComPercentual = valorFrete * 1.07;
-		} else if (regiao == Regiao.SUDESTE) {
-			valorFreteComPercentual = valorFrete * 1.048;
-		} else if (regiao == Regiao.SUL) {
-			valorFreteComPercentual = valorFrete * 1.06;
-		}
+		double valorFreteComPercentual = calculadoraFrete.calcular(destinatario, pedido.getValorFrete());
 
 		// Create the NotaFiscal object
 		String idNotaFiscal = UUID.randomUUID().toString();

@@ -6,6 +6,7 @@ import br.com.itau.geradornotafiscal.port.out.EstoquePort;
 import br.com.itau.geradornotafiscal.port.out.FinanceiroPort;
 import br.com.itau.geradornotafiscal.port.out.RegistroPort;
 import br.com.itau.geradornotafiscal.service.CalculadoraAliquotaProduto;
+import br.com.itau.geradornotafiscal.service.CalculadoraFrete;
 import br.com.itau.geradornotafiscal.service.impl.GeradorNotaFiscalServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,9 @@ public class GeradorNotaFiscalServiceImplTest {
 
     @Mock
     private CalculadoraAliquotaProduto calculadoraAliquotaProduto;
+
+    @Mock
+    private CalculadoraFrete calculadoraFrete;
 
     @Mock
     private EstoquePort estoquePort;
@@ -87,6 +91,7 @@ public class GeradorNotaFiscalServiceImplTest {
                 .build()).collect(Collectors.toList());
 
         when(calculadoraAliquotaProduto.calcularAliquota(eq(itens), eq(expectedAliquota))).thenReturn(itensNF);
+        when(calculadoraFrete.calcular(eq(destinatario), anyDouble())).thenReturn(100.0 * 1.048);
 
         // Act
         NotaFiscal notaFiscal = geradorNotaFiscalService.gerarNotaFiscal(pedido);
