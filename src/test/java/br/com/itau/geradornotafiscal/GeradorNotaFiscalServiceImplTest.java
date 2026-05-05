@@ -93,7 +93,7 @@ public class GeradorNotaFiscalServiceImplTest {
         List<ItemNotaFiscal> itensNF = itens.stream().map(i -> ItemNotaFiscal.builder()
                 .valorUnitario(i.getValorUnitario())
                 .quantidade(i.getQuantidade())
-                .valorTributoItem(i.getValorUnitario().multiply(expectedAliquota).setScale(2, RoundingMode.HALF_UP))
+                .valorTributoItem(i.getValorUnitario().multiply(BigDecimal.valueOf(i.getQuantidade())).multiply(expectedAliquota).setScale(2, RoundingMode.HALF_UP))
                 .build()).collect(Collectors.toList());
 
         when(calculadoraAliquotaProduto.calcularAliquota(eq(itens), eq(expectedAliquota))).thenReturn(itensNF);

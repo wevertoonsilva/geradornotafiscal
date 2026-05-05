@@ -22,6 +22,15 @@ public class CalculadoraAliquotaProdutoTest {
     private final CalculadoraAliquotaProduto calculadora = new CalculadoraAliquotaProduto();
 
     @Test
+    public void deveCalcularValorTributoComQuantidade() {
+        Item item1 = new Item("1", "Item 1", new BigDecimal("100.00"), 2);
+        List<ItemNotaFiscal> resultado = calculadora.calcularAliquota(Arrays.asList(item1), new BigDecimal("0.10"));
+        assertEquals(1, resultado.size());
+        // 100.00 * 2 * 0.10 = 20.00
+        assertEquals(new BigDecimal("20.00"), resultado.get(0).getValorTributoItem());
+    }
+
+    @Test
     public void deveIsolarChamadasSequenciaisComItensDiferentes() {
         // Teste 1: Isolamento sequencial
         Item item1 = new Item("1", "Item 1", new BigDecimal("100.00"), 1);

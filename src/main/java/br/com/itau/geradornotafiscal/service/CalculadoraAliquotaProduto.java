@@ -17,6 +17,7 @@ public class CalculadoraAliquotaProduto {
 
         for (Item item : items) {
             BigDecimal valorTributo = item.getValorUnitario()
+                    .multiply(BigDecimal.valueOf(item.getQuantidade()))
                     .multiply(aliquotaPercentual)
                     .setScale(2, RoundingMode.HALF_UP);
 
