@@ -9,18 +9,23 @@ import br.com.itau.geradornotafiscal.service.CalculadoraAliquotaProduto;
 import br.com.itau.geradornotafiscal.service.impl.GeradorNotaFiscalServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.time.LocalDateTime;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class GeradorNotaFiscalServiceImplTest {
@@ -48,69 +53,90 @@ public class GeradorNotaFiscalServiceImplTest {
         MockitoAnnotations.openMocks(this);
     }
 
-
-
-    @Test
-    public void shouldGenerateNotaFiscalForTipoPessoaFisicaWithValorTotalItensLessThan500() {
-        Pedido pedido = new Pedido();
-        pedido.setValorTotalItens(400);
-        pedido.setValorFrete(100);
-        Destinatario destinatario = new Destinatario();
-        destinatario.setTipoPessoa(TipoPessoa.FISICA);
-
-        // Create and add Endereco to the Destinatario
-        Endereco endereco = new Endereco();
-        endereco.setFinalidade(Finalidade.ENTREGA);
-        endereco.setRegiao(Regiao.SUDESTE);
-        destinatario.setEnderecos(Arrays.asList(endereco));
-
-        pedido.setDestinatario(destinatario);
-
-        // Create and add items to the Pedido
+    @ParameterizedTest
+    @MethodSource("provideTestData")
+    public void shouldGenerateNotaFiscalWithCorrectAliquota(TipoPessoa tipoPessoa, RegimeTributacaoPJ regime, double valorTotal, double expectedAliquota) {
+        // Arrange
         Item item = new Item();
-        item.setValorUnitario(100);
-        item.setQuantidade(4);
-        pedido.setItens(Arrays.asList(item));
+        item.setValorUnitario(valorTotal);
+        item.setQuantidade(1);
+        List<Item> itens = Collections.singletonList(item);
 
-        when(calculadoraAliquotaProduto.calcularAliquota(anyList(), anyDouble())).thenReturn(Arrays.asList(new ItemNotaFiscal()));
+        Endereco endereco = Endereco.builder()
+                .finalidade(Finalidade.ENTREGA)
+                .regiao(Regiao.SUDESTE)
+                .build();
 
+        Destinatario destinatario = Destinatario.builder()
+                .tipoPessoa(tipoPessoa)
+                .regimeTributacao(regime)
+                .enderecos(Collections.singletonList(endereco))
+                .build();
+
+        Pedido pedido = Pedido.builder()
+                .valorTotalItens(valorTotal)
+                .valorFrete(100.0)
+                .destinatario(destinatario)
+                .itens(itens)
+                .build();
+
+        List<ItemNotaFiscal> itensNF = itens.stream().map(i -> ItemNotaFiscal.builder()
+                .valorUnitario(i.getValorUnitario())
+                .quantidade(i.getQuantidade())
+                .valorTributoItem(i.getValorUnitario() * i.getQuantidade() * expectedAliquota)
+                .build()).collect(Collectors.toList());
+
+        when(calculadoraAliquotaProduto.calcularAliquota(eq(itens), eq(expectedAliquota))).thenReturn(itensNF);
+
+        // Act
         NotaFiscal notaFiscal = geradorNotaFiscalService.gerarNotaFiscal(pedido);
 
-        assertEquals(pedido.getValorTotalItens(), notaFiscal.getValorTotalItens());
-        assertEquals(1, notaFiscal.getItens().size());
-        assertEquals(0, notaFiscal.getItens().get(0).getValorTributoItem());
+        // Assert
+        assertNotNull(notaFiscal);
+        assertEquals(valorTotal, notaFiscal.getValorTotalItens());
+        assertEquals(100.0 * 1.048, notaFiscal.getValorFrete(), 0.001);
+        assertEquals(itensNF.size(), notaFiscal.getItens().size());
+        assertEquals(itensNF.get(0).getValorTributoItem(), notaFiscal.getItens().get(0).getValorTributoItem());
+
+        verify(estoquePort).enviarNotaFiscalParaBaixaEstoque(notaFiscal);
+        verify(registroPort).registrarNotaFiscal(notaFiscal);
+        verify(entregaPort).agendarEntrega(notaFiscal);
+        verify(financeiroPort).enviarNotaFiscalParaContasReceber(notaFiscal);
     }
 
-    @Test
-    public void shouldGenerateNotaFiscalForTipoPessoaJuridicaWithRegimeTributacaoLucroPresumidoAndValorTotalItensGreaterThan5000() {
-        Pedido pedido = new Pedido();
-        pedido.setValorTotalItens(6000);
-        pedido.setValorFrete(100);
-        Destinatario destinatario = new Destinatario();
-        destinatario.setTipoPessoa(TipoPessoa.JURIDICA);
-        destinatario.setRegimeTributacao(RegimeTributacaoPJ.LUCRO_PRESUMIDO);
+    private static Stream<Arguments> provideTestData() {
+        return Stream.of(
+                // PF
+                Arguments.of(TipoPessoa.FISICA, null, 499.99, 0.0),
+                Arguments.of(TipoPessoa.FISICA, null, 500.0, 0.12),
+                Arguments.of(TipoPessoa.FISICA, null, 2000.0, 0.12),
+                Arguments.of(TipoPessoa.FISICA, null, 2000.01, 0.15),
+                Arguments.of(TipoPessoa.FISICA, null, 3500.0, 0.15),
+                Arguments.of(TipoPessoa.FISICA, null, 3500.01, 0.17),
 
-        // Create and add Endereco to the Destinatario
-        Endereco endereco = new Endereco();
-        endereco.setFinalidade(Finalidade.ENTREGA);
-        endereco.setRegiao(Regiao.SUDESTE);
-        destinatario.setEnderecos(Arrays.asList(endereco));
+                // PJ Simples Nacional
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.SIMPLES_NACIONAL, 999.99, 0.03),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.SIMPLES_NACIONAL, 1000.0, 0.07),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.SIMPLES_NACIONAL, 2000.0, 0.07),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.SIMPLES_NACIONAL, 2000.01, 0.13),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.SIMPLES_NACIONAL, 5000.0, 0.13),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.SIMPLES_NACIONAL, 5000.01, 0.19),
 
-        pedido.setDestinatario(destinatario);
+                // PJ Lucro Real
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_REAL, 999.99, 0.03),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_REAL, 1000.0, 0.09),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_REAL, 2000.0, 0.09),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_REAL, 2000.01, 0.15),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_REAL, 5000.0, 0.15),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_REAL, 5000.01, 0.20),
 
-        // Create and add items to the Pedido
-        Item item = new Item();
-        item.setValorUnitario(1000);
-        item.setQuantidade(6);
-        pedido.setItens(Arrays.asList(item));
-
-        when(calculadoraAliquotaProduto.calcularAliquota(anyList(), anyDouble())).thenReturn(Arrays.asList(ItemNotaFiscal.builder().valorTributoItem(0.20 * item.getValorUnitario()).build()));
-
-        NotaFiscal notaFiscal = geradorNotaFiscalService.gerarNotaFiscal(pedido);
-
-        assertEquals(pedido.getValorTotalItens(), notaFiscal.getValorTotalItens());
-        assertEquals(1, notaFiscal.getItens().size());
-        assertEquals(0.20 * item.getValorUnitario(), notaFiscal.getItens().get(0).getValorTributoItem());
+                // PJ Lucro Presumido
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_PRESUMIDO, 999.99, 0.03),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_PRESUMIDO, 1000.0, 0.09),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_PRESUMIDO, 2000.0, 0.09),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_PRESUMIDO, 2000.01, 0.16),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_PRESUMIDO, 5000.0, 0.16),
+                Arguments.of(TipoPessoa.JURIDICA, RegimeTributacaoPJ.LUCRO_PRESUMIDO, 5000.01, 0.20)
+        );
     }
-
 }
