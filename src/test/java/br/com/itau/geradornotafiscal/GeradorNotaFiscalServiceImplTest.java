@@ -9,6 +9,8 @@ import br.com.itau.geradornotafiscal.service.CalculadoraAliquotaProduto;
 import br.com.itau.geradornotafiscal.service.CalculadoraFrete;
 import br.com.itau.geradornotafiscal.service.NotaFiscalFactory;
 import br.com.itau.geradornotafiscal.service.impl.GeradorNotaFiscalServiceImpl;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -58,9 +60,21 @@ public class GeradorNotaFiscalServiceImplTest {
     @Mock
     private FinanceiroPort financeiroPort;
 
+    private MeterRegistry meterRegistry = new SimpleMeterRegistry();
+
     @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
+        geradorNotaFiscalService = new GeradorNotaFiscalServiceImpl(
+                calculadoraAliquotaProduto,
+                calculadoraFrete,
+                notaFiscalFactory,
+                estoquePort,
+                registroPort,
+                entregaPort,
+                financeiroPort,
+                meterRegistry
+        );
     }
 
     @ParameterizedTest

@@ -6,6 +6,8 @@ import br.com.itau.geradornotafiscal.port.out.EstoquePort;
 import br.com.itau.geradornotafiscal.port.out.FinanceiroPort;
 import br.com.itau.geradornotafiscal.port.out.RegistroPort;
 import br.com.itau.geradornotafiscal.service.*;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +27,7 @@ public class GeradorNotaFiscalServiceImpl implements GeradorNotaFiscalService{
 	private final RegistroPort registroPort;
 	private final EntregaPort entregaPort;
 	private final FinanceiroPort financeiroPort;
+	private final MeterRegistry meterRegistry;
 
 	public GeradorNotaFiscalServiceImpl(
 			CalculadoraAliquotaProduto calculadoraAliquotaProduto,
@@ -33,7 +36,8 @@ public class GeradorNotaFiscalServiceImpl implements GeradorNotaFiscalService{
 			EstoquePort estoquePort,
 			RegistroPort registroPort,
 			EntregaPort entregaPort,
-			FinanceiroPort financeiroPort) {
+			FinanceiroPort financeiroPort,
+			MeterRegistry meterRegistry) {
 		this.calculadoraAliquotaProduto = calculadoraAliquotaProduto;
 		this.calculadoraFrete = calculadoraFrete;
 		this.notaFiscalFactory = notaFiscalFactory;
@@ -41,10 +45,20 @@ public class GeradorNotaFiscalServiceImpl implements GeradorNotaFiscalService{
 		this.registroPort = registroPort;
 		this.entregaPort = entregaPort;
 		this.financeiroPort = financeiroPort;
+		this.meterRegistry = meterRegistry;
 	}
 
 	@Override
 	public NotaFiscal gerarNotaFiscal(Pedido pedido) {
+		Timer.Sample sample = Timer.start(meterRegistry);
+		try {
+			return processarGeracao(pedido);
+		} finally {
+			sample.stop(meterRegistry.timer("notas.fiscais.geracao.tempo"));
+		}
+	}
+
+	private NotaFiscal processarGeracao(Pedido pedido) {
 
 		Destinatario destinatario = pedido.getDestinatario();
 		TipoPessoa tipoPessoa = destinatario.getTipoPessoa();
@@ -58,6 +72,8 @@ public class GeradorNotaFiscalServiceImpl implements GeradorNotaFiscalService{
 		BigDecimal valorFreteComPercentual = calculadoraFrete.calcular(destinatario, pedido.getValorFrete());
 
 		NotaFiscal notaFiscal = notaFiscalFactory.criar(pedido, itemNotaFiscalList, valorFreteComPercentual);
+
+		meterRegistry.counter("notas.fiscais.geradas", "tipo_pessoa", tipoPessoa.name()).increment();
 
 		try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
 			executor.submit(() -> {
