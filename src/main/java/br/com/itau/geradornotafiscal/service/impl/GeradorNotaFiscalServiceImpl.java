@@ -8,16 +8,18 @@ import br.com.itau.geradornotafiscal.port.out.RegistroPort;
 import br.com.itau.geradornotafiscal.service.*;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.concurrent.Executors;
 
-@Slf4j
 @Service
 public class GeradorNotaFiscalServiceImpl implements GeradorNotaFiscalService{
+
+	private static final Logger log = LoggerFactory.getLogger(GeradorNotaFiscalServiceImpl.class);
 
 	private final CalculadoraAliquotaProduto calculadoraAliquotaProduto;
 	private final CalculadoraFrete calculadoraFrete;
@@ -50,11 +52,21 @@ public class GeradorNotaFiscalServiceImpl implements GeradorNotaFiscalService{
 
 	@Override
 	public NotaFiscal gerarNotaFiscal(Pedido pedido) {
+		log.info("Gerando nota fiscal — idPedido={} tipoPessoa={} itens={}",
+				pedido.getIdPedido(), pedido.getDestinatario().getTipoPessoa(), pedido.getItens().size());
+
 		Timer.Sample sample = Timer.start(meterRegistry);
 		try {
-			return processarGeracao(pedido);
+			NotaFiscal notaFiscal = processarGeracao(pedido);
+
+			log.info("Nota fiscal gerada — idPedido={} idNotaFiscal={}",
+					pedido.getIdPedido(), notaFiscal.getIdNotaFiscal());
+
+			return notaFiscal;
 		} finally {
-			sample.stop(meterRegistry.timer("notas.fiscais.geracao.tempo"));
+			long tempoTotal = sample.stop(meterRegistry.timer("notas.fiscais.geracao.tempo"));
+			log.info("Conclusão do processamento — idPedido={} tempoTotalMs={}",
+					pedido.getIdPedido(), tempoTotal / 1_000_000);
 		}
 	}
 
@@ -66,10 +78,12 @@ public class GeradorNotaFiscalServiceImpl implements GeradorNotaFiscalService{
 
 		AliquotaStrategy strategy = AliquotaStrategyFactory.getStrategy(tipoPessoa, regimeTributacao);
 		BigDecimal aliquota = strategy.calcularAliquota(pedido.getValorTotalItens());
+		log.info("Alíquota determinada — idPedido={} aliquota={}", pedido.getIdPedido(), aliquota);
 
 		List<ItemNotaFiscal> itemNotaFiscalList = calculadoraAliquotaProduto.calcularAliquota(pedido.getItens(), aliquota);
 
 		BigDecimal valorFreteComPercentual = calculadoraFrete.calcular(destinatario, pedido.getValorFrete());
+		log.info("Frete calculado — idPedido={} valorFrete={}", pedido.getIdPedido(), valorFreteComPercentual);
 
 		NotaFiscal notaFiscal = notaFiscalFactory.criar(pedido, itemNotaFiscalList, valorFreteComPercentual);
 

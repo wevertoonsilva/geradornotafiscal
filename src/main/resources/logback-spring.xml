@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <conversionRule conversionWord="maskedMsg"
+        converterClass="br.com.itau.geradornotafiscal.infrastructure.config.SensitiveDataMaskingConverter"/>
+
+    <!-- Profile dev: log legível no console -->
+    <springProfile name="dev">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{HH:mm:ss} [%thread] %-5level %logger{36} - %maskedMsg%n</pattern>
+            </encoder>
+        </appender>
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!-- Profile prod: JSON estruturado para o Datadog -->
+    <springProfile name="prod">
+        <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <customFields>{"env":"prod","service":"geradornotafiscal","version":"1.0.0"}</customFields>
+                <includeMdcKeyName>dd.trace_id</includeMdcKeyName>
+                <includeMdcKeyName>dd.span_id</includeMdcKeyName>
+                <includeMdcKeyName>dd.service</includeMdcKeyName>
+                <includeMdcKeyName>dd.env</includeMdcKeyName>
+            </encoder>
+        </appender>
+        <root level="INFO">
+            <appender-ref ref="JSON_CONSOLE"/>
+        </root>
+    </springProfile>
+
+</configuration>
