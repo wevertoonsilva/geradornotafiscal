@@ -54,112 +54,114 @@ jobs:
         if: github.event_name == 'pull_request'
         with:
           script: |
-            const conclusion = '${{ job.status }}' === 'success' ? '✅ Testes passaram' : '❌ Testes falharam';
+            const status = '${{ job.status }}';
+            const conclusion = status === 'success' ? '✅ Testes passaram' : '❌ Testes falharam';
+            const sha = '${{ github.sha }}';
+            const runUrl = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
+            const body = '### CI — ' + conclusion + '\nCommit: ' + sha + '\nVer detalhes na [aba Actions](' + runUrl + ').';
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `### CI — ${conclusion}
-Commit: \`${{ github.sha }}\`
-  Ver detalhes na [aba Actions](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).`
-  })
+              body: body
+            })
 
-# ── Job 2: Build + Push ECR + Deploy ECS ─────────────────────
-# Só executa em push na main ou criação de tag — NUNCA em PR
-build-and-deploy:
-  name: Build, Push e Deploy
-  runs-on: ubuntu-latest
-  needs: test                    # só executa se os testes passarem
-  if: github.event_name != 'pull_request'   # bloqueia deploy em PR
-  environment: production        # habilita aprovação manual no GitHub se configurado
+  # ── Job 2: Build + Push ECR + Deploy ECS ─────────────────────
+  # Só executa em push na main ou criação de tag — NUNCA em PR
+  build_and_deploy:
+    name: Build, Push e Deploy
+    runs-on: ubuntu-latest
+    needs: test                    # só executa se os testes passarem
+    if: github.event_name != 'pull_request'   # bloqueia deploy em PR
+    environment: production        # habilita aprovação manual no GitHub se configurado
 
-  steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    # Autenticação na AWS via OIDC — sem Access Key no repositório
-    - name: Autenticar na AWS (OIDC)
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-        aws-region: ${{ env.AWS_REGION }}
+      # Autenticação na AWS via OIDC — sem Access Key no repositório
+      - name: Autenticar na AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
 
-    # Login no ECR
-    - name: Login no Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
+      # Login no ECR
+      - name: Login no Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-    # Definir a tag da imagem
-    # Push na main   → tag = SHA curto (ex: a1b2c3d)
-    # Tag de release → tag = versão-SHA  (ex: v1.0.0-a1b2c3d)
-    - name: Definir tag da imagem
-      id: image-tag
-      run: |
-        SHA_SHORT=${GITHUB_SHA:0:7}
-        if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-          RELEASE_TAG=${GITHUB_REF#refs/tags/}
-          echo "full_tag=${RELEASE_TAG}-${SHA_SHORT}" >> $GITHUB_OUTPUT
-        else
-          echo "full_tag=${SHA_SHORT}" >> $GITHUB_OUTPUT
-        fi
+      # Definir a tag da imagem
+      # Push na main   → tag = SHA curto (ex: a1b2c3d)
+      # Tag de release → tag = versão-SHA  (ex: v1.0.0-a1b2c3d)
+      - name: Definir tag da imagem
+        id: image-tag
+        run: |
+          SHA_SHORT=${GITHUB_SHA:0:7}
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            RELEASE_TAG=${GITHUB_REF#refs/tags/}
+            echo "full_tag=${RELEASE_TAG}-${SHA_SHORT}" >> $GITHUB_OUTPUT
+          else
+            echo "full_tag=${SHA_SHORT}" >> $GITHUB_OUTPUT
+          fi
 
-    # Build da imagem Docker
-    - name: Build da imagem
-      id: build-image
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ steps.image-tag.outputs.full_tag }}
-      run: |
-        IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        docker build -t $IMAGE_URI .
-        echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT
+      # Build da imagem Docker
+      - name: Build da imagem
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ steps.image-tag.outputs.full_tag }}
+        run: |
+          IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker build -t $IMAGE_URI .
+          echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT
 
-    # Scan de vulnerabilidades — bloqueia se encontrar HIGH ou CRITICAL
-    - name: Scan de vulnerabilidades (Trivy)
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: ${{ steps.build-image.outputs.image }}
-        format: table
-        exit-code: '1'
-        severity: 'HIGH,CRITICAL'
-        ignore-unfixed: true     # ignora vulnerabilidades sem fix disponível
+      # Scan de vulnerabilidades — bloqueia se encontrar HIGH ou CRITICAL
+      - name: Scan de vulnerabilidades (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.build-image.outputs.image }}
+          format: table
+          exit-code: '1'
+          severity: 'HIGH,CRITICAL'
+          ignore-unfixed: true     # ignora vulnerabilidades sem fix disponível
 
-    # Push para o ECR — só ocorre se o scan passar
-    - name: Push para ECR
-      env:
-        IMAGE_URI: ${{ steps.build-image.outputs.image }}
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-      run: |
-        docker push $IMAGE_URI
-        docker tag $IMAGE_URI $ECR_REGISTRY/$ECR_REPOSITORY:latest
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+      # Push para o ECR — só ocorre se o scan passar
+      - name: Push para ECR
+        env:
+          IMAGE_URI: ${{ steps.build-image.outputs.image }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker push $IMAGE_URI
+          docker tag $IMAGE_URI $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-    # Atualizar o task definition com a nova imagem
-    - name: Atualizar task definition com nova imagem
-      id: task-def
-      uses: aws-actions/amazon-ecs-render-task-definition@v1
-      with:
-        task-definition: task-definition.json
-        container-name: ${{ env.CONTAINER_NAME }}
-        image: ${{ steps.build-image.outputs.image }}
+      # Atualizar o task definition com a nova imagem
+      - name: Atualizar task definition com nova imagem
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build-image.outputs.image }}
 
-    # Deploy no ECS — registra nova revisão do task definition e atualiza o service
-    - name: Deploy no ECS Fargate
-      uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-      with:
-        task-definition: ${{ steps.task-def.outputs.task-definition }}
-        service: ${{ env.ECS_SERVICE }}
-        cluster: ${{ env.ECS_CLUSTER }}
-        wait-for-service-stability: true   # aguarda rollout completar
+      # Deploy no ECS — registra nova revisão do task definition e atualiza o service
+      - name: Deploy no ECS Fargate
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true   # aguarda rollout completar
 
-    # Sumário do deploy para visualização na aba Actions do GitHub
-    - name: Sumário do deploy
-      run: |
-        echo "## Deploy concluído ✅" >> $GITHUB_STEP_SUMMARY
-        echo "| Campo | Valor |" >> $GITHUB_STEP_SUMMARY
-        echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
-        echo "| Imagem | \`${{ steps.build-image.outputs.image }}\` |" >> $GITHUB_STEP_SUMMARY
-        echo "| Cluster | \`${{ env.ECS_CLUSTER }}\` |" >> $GITHUB_STEP_SUMMARY
-        echo "| Service | \`${{ env.ECS_SERVICE }}\` |" >> $GITHUB_STEP_SUMMARY
-        echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-        echo "| Autor | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+      # Sumário do deploy para visualização na aba Actions do GitHub
+      - name: Sumário do deploy
+        run: |
+          echo "## Deploy concluído ✅" >> $GITHUB_STEP_SUMMARY
+          echo "| Campo | Valor |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Imagem | \`${{ steps.build-image.outputs.image }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Cluster | \`${{ env.ECS_CLUSTER }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | \`${{ env.ECS_SERVICE }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Autor | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
