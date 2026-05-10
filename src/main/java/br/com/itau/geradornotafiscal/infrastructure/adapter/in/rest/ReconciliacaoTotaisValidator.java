@@ -28,8 +28,19 @@ public class ReconciliacaoTotaisValidator implements ConstraintValidator<Reconci
             return true;
         }
 
+        // Se houver qualquer item com valor unitário nulo, não podemos reconciliar com segurança
+        boolean possuiItemInvalido = pedido.getItens().stream()
+                .anyMatch(item -> item.getValorUnitario() == null);
+        
+        if (possuiItemInvalido) {
+            context.disableDefaultConstraintViolation();
+            context.buildConstraintViolationWithTemplate("Existem itens com valor unitário não informado")
+                    .addPropertyNode("itens")
+                    .addConstraintViolation();
+            return false;
+        }
+
         BigDecimal somaItens = pedido.getItens().stream()
-                .filter(item -> item.getValorUnitario() != null)
                 .map(item -> item.getValorUnitario().multiply(BigDecimal.valueOf(item.getQuantidade())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 

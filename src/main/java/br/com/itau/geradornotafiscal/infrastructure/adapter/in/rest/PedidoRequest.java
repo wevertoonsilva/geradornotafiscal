@@ -6,12 +6,14 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Data
 @Builder
@@ -26,6 +28,7 @@ public class PedidoRequest {
     private LocalDate data;
 
     @JsonProperty("valor_total_itens")
+    @NotNull
     @Positive
     private BigDecimal valorTotalItens;
 
@@ -66,9 +69,12 @@ public class PedidoRequest {
         private String descricao;
 
         @JsonProperty("valor_unitario")
+        @NotNull
+        @Positive
         private BigDecimal valorUnitario;
 
         @JsonProperty("quantidade")
+        @Positive
         private int quantidade;
 
         public Item toDomain() {
