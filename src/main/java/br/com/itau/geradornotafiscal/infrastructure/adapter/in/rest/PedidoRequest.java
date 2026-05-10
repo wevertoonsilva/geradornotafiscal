@@ -50,7 +50,7 @@ public class PedidoRequest {
                 .data(this.data)
                 .valorTotalItens(this.valorTotalItens)
                 .valorFrete(this.valorFrete)
-                .itens(this.itens.stream().map(ItemRequest::toDomain).collect(Collectors.toList()))
+                .itens(this.itens.stream().map(ItemRequest::toDomain).toList())
                 .destinatario(this.destinatario.toDomain())
                 .build();
     }
@@ -104,8 +104,8 @@ public class PedidoRequest {
                     .nome(this.nome)
                     .tipoPessoa(this.tipoPessoa)
                     .regimeTributacao(this.regimeTributacao)
-                    .documentos(this.documentos != null ? this.documentos.stream().map(DocumentoRequest::toDomain).collect(Collectors.toList()) : null)
-                    .enderecos(this.enderecos.stream().map(EnderecoRequest::toDomain).collect(Collectors.toList()))
+                    .documentos(this.documentos != null ? this.documentos.stream().map(DocumentoRequest::toDomain).toList() : null)
+                    .enderecos(this.enderecos.stream().map(EnderecoRequest::toDomain).toList())
                     .build();
         }
     }

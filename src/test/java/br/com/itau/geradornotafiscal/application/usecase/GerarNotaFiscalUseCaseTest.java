@@ -107,7 +107,7 @@ public class GerarNotaFiscalUseCaseTest {
                 .valorUnitario(i.getValorUnitario())
                 .quantidade(i.getQuantidade())
                 .valorTributoItem(i.getValorUnitario().multiply(BigDecimal.valueOf(i.getQuantidade())).multiply(expectedAliquota).setScale(2, RoundingMode.HALF_UP))
-                .build()).collect(Collectors.toList());
+                .build()).toList();
 
         when(calculadoraAliquotaProduto.calcularAliquota(eq(itens), eq(expectedAliquota))).thenReturn(itensNF);
         BigDecimal valorFreteEsperado = new BigDecimal("100.00").multiply(new BigDecimal("1.048")).setScale(2, RoundingMode.HALF_UP);

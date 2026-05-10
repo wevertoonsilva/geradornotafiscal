@@ -72,7 +72,7 @@ public class CalculadoraAliquotaProdutoTest {
 
         List<Future<List<ItemNotaFiscal>>> futures = IntStream.range(0, numThreads)
                 .mapToObj(i -> executor.submit(task))
-                .collect(Collectors.toList());
+                .toList();
 
         for (Future<List<ItemNotaFiscal>> future : futures) {
             try {
