@@ -46,7 +46,7 @@ class GeradorNFControllerValidationTest {
                 .itens(Collections.singletonList(new PedidoRequest.ItemRequest("1", "Item 1", new BigDecimal("100.00"), 1)))
                 .build();
 
-        mockMvc.perform(post("/api/pedido/gerarNotaFiscal")
+        mockMvc.perform(post("/v1/notas-fiscais")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(toJson(pedido)))
                 .andExpect(status().isBadRequest())
@@ -71,7 +71,7 @@ class GeradorNFControllerValidationTest {
                 .destinatario(destinatario)
                 .build();
 
-        mockMvc.perform(post("/api/pedido/gerarNotaFiscal")
+        mockMvc.perform(post("/v1/notas-fiscais")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(toJson(pedido)))
                 .andExpect(status().isBadRequest())
@@ -94,7 +94,7 @@ class GeradorNFControllerValidationTest {
                 .destinatario(destinatario)
                 .build();
 
-        mockMvc.perform(post("/api/pedido/gerarNotaFiscal")
+        mockMvc.perform(post("/v1/notas-fiscais")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(toJson(pedido)))
                 .andExpect(status().isBadRequest())
@@ -117,7 +117,7 @@ class GeradorNFControllerValidationTest {
                 .destinatario(destinatario)
                 .build();
 
-        mockMvc.perform(post("/api/pedido/gerarNotaFiscal")
+        mockMvc.perform(post("/v1/notas-fiscais")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(toJson(pedido)))
                 .andExpect(status().isBadRequest())
