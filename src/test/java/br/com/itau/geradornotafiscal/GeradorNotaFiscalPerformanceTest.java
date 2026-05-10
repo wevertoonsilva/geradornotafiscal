@@ -1,7 +1,7 @@
 package br.com.itau.geradornotafiscal;
 
-import br.com.itau.geradornotafiscal.model.*;
-import br.com.itau.geradornotafiscal.service.GeradorNotaFiscalService;
+import br.com.itau.geradornotafiscal.domain.model.*;
+import br.com.itau.geradornotafiscal.application.port.in.GerarNotaFiscalPort;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,10 +22,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 public class GeradorNotaFiscalPerformanceTest {
 
     @Autowired
-    private GeradorNotaFiscalService geradorNotaFiscalService;
+    private GerarNotaFiscalPort geradorNotaFiscalService;
 
     @MockitoSpyBean
-    private br.com.itau.geradornotafiscal.port.out.EstoquePort estoquePort;
+    private br.com.itau.geradornotafiscal.application.port.out.EstoquePort estoquePort;
 
     @Test
     public void deveMedirTempoExecucaoAte5Itens() {
