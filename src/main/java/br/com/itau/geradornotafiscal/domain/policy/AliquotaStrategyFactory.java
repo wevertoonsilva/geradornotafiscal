@@ -3,18 +3,15 @@ package br.com.itau.geradornotafiscal.domain.policy;
 import br.com.itau.geradornotafiscal.domain.model.RegimeTributacaoPJ;
 import br.com.itau.geradornotafiscal.domain.model.TipoPessoa;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class AliquotaStrategyFactory {
 
-    private static final Map<RegimeTributacaoPJ, AliquotaStrategy> PJ_STRATEGIES = new HashMap<>();
-
-    static {
-        PJ_STRATEGIES.put(RegimeTributacaoPJ.SIMPLES_NACIONAL, new SimplesNacionalAliquotaStrategy());
-        PJ_STRATEGIES.put(RegimeTributacaoPJ.LUCRO_REAL, new LucroRealAliquotaStrategy());
-        PJ_STRATEGIES.put(RegimeTributacaoPJ.LUCRO_PRESUMIDO, new LucroPresumidoAliquotaStrategy());
-    }
+    private static final Map<RegimeTributacaoPJ, AliquotaStrategy> PJ_STRATEGIES = Map.of(
+            RegimeTributacaoPJ.SIMPLES_NACIONAL, new SimplesNacionalAliquotaStrategy(),
+            RegimeTributacaoPJ.LUCRO_REAL, new LucroRealAliquotaStrategy(),
+            RegimeTributacaoPJ.LUCRO_PRESUMIDO, new LucroPresumidoAliquotaStrategy()
+    );
 
     private static final AliquotaStrategy PF_STRATEGY = new PessoaFisicaAliquotaStrategy();
 
