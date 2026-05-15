@@ -230,7 +230,7 @@ components:
           enum: [NORTE, NORDESTE, CENTRO_OESTE, SUDESTE, SUL]
         finalidade:
           type: string
-          enum: [ENTREGA, COBRANCA]
+          enum: [COBRANCA_ENTREGA, ENTREGA, COBRANCA, OUTROS]
 
     NotaFiscal:
       type: object

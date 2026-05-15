@@ -9,6 +9,7 @@ import br.com.itau.geradornotafiscal.domain.model.Regiao;
 import br.com.itau.geradornotafiscal.domain.model.TipoDocumento;
 import br.com.itau.geradornotafiscal.domain.model.TipoPessoa;
 import br.com.itau.geradornotafiscal.infrastructure.adapter.in.rest.generated.model.DestinatarioRequest;
+import br.com.itau.geradornotafiscal.infrastructure.adapter.in.rest.generated.model.EnderecoRequest;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
@@ -71,5 +72,18 @@ class NotaFiscalMapperTest {
         assertEquals(DestinatarioRequest.TipoPessoaEnum.FISICA, response.getDestinatario().getTipoPessoa());
         assertEquals(1, response.getDestinatario().getEnderecos().size());
         assertEquals("Sao Paulo", response.getDestinatario().getEnderecos().getFirst().getCidade());
+    }
+
+    @Test
+    void deveMapearTodasAsFinalidadesDoDominioParaResponse() {
+        for (Finalidade finalidade : Finalidade.values()) {
+            Endereco endereco = Endereco.builder()
+                    .finalidade(finalidade)
+                    .build();
+
+            EnderecoRequest response = mapper.toResponse(endereco);
+
+            assertEquals(EnderecoRequest.FinalidadeEnum.valueOf(finalidade.name()), response.getFinalidade());
+        }
     }
 }

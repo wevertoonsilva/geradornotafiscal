@@ -1,12 +1,14 @@
 package br.com.itau.geradornotafiscal.infrastructure.adapter.in.rest;
 
+import br.com.itau.geradornotafiscal.domain.model.Destinatario;
+import br.com.itau.geradornotafiscal.domain.model.RegimeTributacaoPJ;
 import br.com.itau.geradornotafiscal.domain.model.TipoPessoa;
 import br.com.itau.geradornotafiscal.infrastructure.adapter.in.rest.generated.model.DestinatarioRequest;
+import br.com.itau.geradornotafiscal.infrastructure.adapter.in.rest.generated.model.DocumentoRequest;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 class PedidoMapperTest {
 
@@ -14,22 +16,43 @@ class PedidoMapperTest {
 
     @Test
     void deveMapearTipoPessoaFisica() {
-        TipoPessoa tipoPessoa = mapper.tipoPessoaEnumToTipoPessoa(DestinatarioRequest.TipoPessoaEnum.FISICA);
+        DestinatarioRequest request = destinatarioRequest(DestinatarioRequest.TipoPessoaEnum.FISICA, null);
 
-        assertEquals(TipoPessoa.FISICA, tipoPessoa);
+        Destinatario destinatario = mapper.toDomain(request);
+
+        assertEquals(TipoPessoa.FISICA, destinatario.getTipoPessoa());
     }
 
     @Test
     void deveMapearTipoPessoaJuridica() {
-        TipoPessoa tipoPessoa = mapper.tipoPessoaEnumToTipoPessoa(DestinatarioRequest.TipoPessoaEnum.JURIDICA);
+        DestinatarioRequest request = destinatarioRequest(
+                DestinatarioRequest.TipoPessoaEnum.JURIDICA,
+                DestinatarioRequest.RegimeTributacaoEnum.SIMPLES_NACIONAL);
 
-        assertEquals(TipoPessoa.JURIDICA, tipoPessoa);
+        Destinatario destinatario = mapper.toDomain(request);
+
+        assertEquals(TipoPessoa.JURIDICA, destinatario.getTipoPessoa());
+        assertEquals(RegimeTributacaoPJ.SIMPLES_NACIONAL, destinatario.getRegimeTributacao());
     }
 
     @Test
-    void deveManterTipoPessoaNulo() {
-        TipoPessoa tipoPessoa = mapper.tipoPessoaEnumToTipoPessoa(null);
+    void deveMapearRegimeTributacaoOutros() {
+        DestinatarioRequest request = destinatarioRequest(
+                DestinatarioRequest.TipoPessoaEnum.JURIDICA,
+                DestinatarioRequest.RegimeTributacaoEnum.OUTROS);
 
-        assertNull(tipoPessoa);
+        Destinatario destinatario = mapper.toDomain(request);
+
+        assertEquals(RegimeTributacaoPJ.OUTROS, destinatario.getRegimeTributacao());
+    }
+
+    private DestinatarioRequest destinatarioRequest(
+            DestinatarioRequest.TipoPessoaEnum tipoPessoa,
+            DestinatarioRequest.RegimeTributacaoEnum regimeTributacao) {
+        DestinatarioRequest request = new DestinatarioRequest();
+        request.setTipoPessoa(tipoPessoa);
+        request.setRegimeTributacao(regimeTributacao);
+        request.setDocumento(new DocumentoRequest(DocumentoRequest.TipoEnum.CPF, "123.456.789-00"));
+        return request;
     }
 }
