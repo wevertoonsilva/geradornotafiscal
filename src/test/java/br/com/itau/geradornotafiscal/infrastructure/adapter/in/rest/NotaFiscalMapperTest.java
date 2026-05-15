@@ -48,8 +48,11 @@ class NotaFiscalMapperTest {
                                 .enderecos(List.of(Endereco.builder()
                                         .logradouro("Rua A")
                                         .numero("1")
+                                        .complemento("Apto 10")
+                                        .bairro("Centro")
                                         .cidade("Sao Paulo")
                                         .estado("SP")
+                                        .pais("Brasil")
                                         .cep("01310-100")
                                         .regiao(Regiao.SUDESTE)
                                         .finalidade(Finalidade.ENTREGA)
@@ -70,8 +73,13 @@ class NotaFiscalMapperTest {
         assertEquals(new BigDecimal("18.00"), response.getItens().getFirst().getValorTributoItem());
         assertEquals("Joao Silva", response.getDestinatario().getNome());
         assertEquals(DestinatarioRequest.TipoPessoaEnum.FISICA, response.getDestinatario().getTipoPessoa());
+        assertEquals(1, response.getDestinatario().getDocumentos().size());
+        assertEquals("123.456.789-00", response.getDestinatario().getDocumentos().getFirst().getNumero());
         assertEquals(1, response.getDestinatario().getEnderecos().size());
         assertEquals("Sao Paulo", response.getDestinatario().getEnderecos().getFirst().getCidade());
+        assertEquals("Apto 10", response.getDestinatario().getEnderecos().getFirst().getComplemento());
+        assertEquals("Centro", response.getDestinatario().getEnderecos().getFirst().getBairro());
+        assertEquals("Brasil", response.getDestinatario().getEnderecos().getFirst().getPais());
     }
 
     @Test

@@ -28,7 +28,7 @@ class GeradorNFControllerValidationTest {
             {
               "nome": "Pessoa Fisica",
               "tipo_pessoa": "FISICA",
-              "documento": {"tipo": "CPF", "numero": "123.456.789-00"},
+              "documentos": [{"tipo": "CPF", "numero": "123.456.789-00"}],
               "enderecos": [{"logradouro": "Rua A", "numero": "1", "cidade": "SP", "estado": "SP", "cep": "01310-100", "regiao": "SUDESTE", "finalidade": "ENTREGA"}]
             }
             """;
@@ -37,7 +37,7 @@ class GeradorNFControllerValidationTest {
             {
               "nome": "Empresa LTDA",
               "tipo_pessoa": "JURIDICA",
-              "documento": {"tipo": "CNPJ", "numero": "12.345.678/0001-90"},
+              "documentos": [{"tipo": "CNPJ", "numero": "12.345.678/0001-90"}],
               "enderecos": [{"logradouro": "Av B", "numero": "2", "cidade": "SP", "estado": "SP", "cep": "01310-100", "regiao": "SUDESTE", "finalidade": "ENTREGA"}]
             }
             """;
@@ -114,7 +114,7 @@ class GeradorNFControllerValidationTest {
                   "destinatario": {
                     "nome": "Pessoa Fisica",
                     "tipo_pessoa": "FISICA",
-                    "documento": {"tipo": "CPF", "numero": "123.456.789-00"},
+                    "documentos": [{"tipo": "CPF", "numero": "123.456.789-00"}],
                     "enderecos": []
                   }
                 }

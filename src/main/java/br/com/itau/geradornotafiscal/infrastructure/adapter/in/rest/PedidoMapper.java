@@ -13,10 +13,6 @@ import br.com.itau.geradornotafiscal.infrastructure.adapter.in.rest.generated.mo
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
-import org.mapstruct.Named;
-
-import java.util.Collections;
-import java.util.List;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface PedidoMapper {
@@ -30,17 +26,9 @@ public interface PedidoMapper {
 
     Item toDomain(ItemRequest item);
 
-    @Mapping(source = "documento", target = "documentos", qualifiedByName = "documentoToList")
     Destinatario toDomain(DestinatarioRequest destinatario);
 
     Documento toDomain(DocumentoRequest documento);
 
-    @Mapping(target = "complemento", ignore = true)
     Endereco toDomain(EnderecoRequest endereco);
-
-    @Named("documentoToList")
-    default List<Documento> documentoToList(DocumentoRequest documento) {
-        if (documento == null) return Collections.emptyList();
-        return List.of(toDomain(documento));
-    }
 }

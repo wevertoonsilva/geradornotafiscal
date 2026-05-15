@@ -15,9 +15,11 @@ public class Endereco {
     private String cep;
     private String logradouro;
     private String numero;
+    private String complemento;
+    private String bairro;
     private String cidade;
     private String estado;
-    private String complemento;
+    private String pais;
     private Finalidade finalidade;
     private Regiao regiao;
 }

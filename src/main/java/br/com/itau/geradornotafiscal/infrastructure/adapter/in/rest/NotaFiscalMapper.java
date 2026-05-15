@@ -12,7 +12,6 @@ import org.mapstruct.Named;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.List;
 import java.util.UUID;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
@@ -22,7 +21,6 @@ public interface NotaFiscalMapper {
     @Mapping(source = "data", target = "data", qualifiedByName = "localDateTimeToOffsetDateTime")
     NotaFiscal toResponse(br.com.itau.geradornotafiscal.domain.model.NotaFiscal domain);
 
-    @Mapping(source = "documentos", target = "documento", qualifiedByName = "documentosToDocumento")
     DestinatarioRequest toResponse(Destinatario domain);
 
     DocumentoRequest toResponse(Documento domain);
@@ -40,11 +38,5 @@ public interface NotaFiscalMapper {
     @Named("localDateTimeToOffsetDateTime")
     default OffsetDateTime localDateTimeToOffsetDateTime(LocalDateTime dateTime) {
         return dateTime != null ? dateTime.atOffset(ZoneOffset.UTC) : null;
-    }
-
-    @Named("documentosToDocumento")
-    default DocumentoRequest documentosToDocumento(List<Documento> documentos) {
-        if (documentos == null || documentos.isEmpty()) return null;
-        return toResponse(documentos.getFirst());
     }
 }

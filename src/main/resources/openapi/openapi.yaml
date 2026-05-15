@@ -57,14 +57,17 @@ paths:
                   destinatario:
                     nome: "João Silva"
                     tipo_pessoa: "FISICA"
-                    documento:
-                      tipo: "CPF"
-                      numero: "123.456.789-00"
+                    documentos:
+                      - tipo: "CPF"
+                        numero: "123.456.789-00"
                     enderecos:
                       - logradouro: "Rua Teste"
                         numero: "123"
+                        complemento: "Apto 10"
+                        bairro: "Centro"
                         cidade: "São Paulo"
                         estado: "SP"
+                        pais: "Brasil"
                         cep: "01310-100"
                         regiao: "SUDESTE"
                         finalidade: "ENTREGA"
@@ -84,14 +87,17 @@ paths:
                     nome: "Empresa LTDA"
                     tipo_pessoa: "JURIDICA"
                     regime_tributacao: "SIMPLES_NACIONAL"
-                    documento:
-                      tipo: "CNPJ"
-                      numero: "12.345.678/0001-90"
+                    documentos:
+                      - tipo: "CNPJ"
+                        numero: "12.345.678/0001-90"
                     enderecos:
                       - logradouro: "Av. Industrial"
                         numero: "456"
+                        complemento: "Galpão 2"
+                        bairro: "Distrito Industrial"
                         cidade: "Manaus"
                         estado: "AM"
+                        pais: "Brasil"
                         cep: "69000-000"
                         regiao: "NORTE"
                         finalidade: "ENTREGA"
@@ -179,7 +185,7 @@ components:
 
     DestinatarioRequest:
       type: object
-      required: [nome, tipo_pessoa, documento, enderecos]
+      required: [nome, tipo_pessoa, documentos, enderecos]
       properties:
         nome:
           type: string
@@ -192,8 +198,11 @@ components:
           type: string
           enum: [SIMPLES_NACIONAL, LUCRO_REAL, LUCRO_PRESUMIDO, OUTROS]
           description: Obrigatório quando tipo_pessoa = JURIDICA
-        documento:
-          $ref: '#/components/schemas/DocumentoRequest'
+        documentos:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DocumentoRequest'
         enderecos:
           type: array
           minItems: 1
@@ -219,9 +228,15 @@ components:
           type: string
         numero:
           type: string
+        complemento:
+          type: string
+        bairro:
+          type: string
         cidade:
           type: string
         estado:
+          type: string
+        pais:
           type: string
         cep:
           type: string
