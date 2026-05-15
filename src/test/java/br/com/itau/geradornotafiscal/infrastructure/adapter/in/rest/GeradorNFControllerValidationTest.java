@@ -141,6 +141,33 @@ class GeradorNFControllerValidationTest {
     }
 
     @Test
+    void deveRetornar400QuandoEnumInvalido() throws Exception {
+        String payload = """
+                {
+                  "id_pedido": 1,
+                  "data": "2026-05-15",
+                  "valor_total_itens": 100.00,
+                  "valor_frete": 10.00,
+                  "itens": [{"id_item": "1", "descricao": "Item 1", "valor_unitario": 100.00, "quantidade": 1}],
+                  "destinatario": {
+                    "nome": "Pessoa Fisica",
+                    "tipo_pessoa": "PF",
+                    "documentos": [{"tipo": "CPF", "numero": "123.456.789-00"}],
+                    "enderecos": [{"logradouro": "Rua A", "numero": "1", "cidade": "SP", "estado": "SP", "cep": "01310-100", "regiao": "SUDESTE", "finalidade": "ENTREGA"}]
+                  }
+                }
+                """;
+
+        mockMvc.perform(post("/v1/notas-fiscais")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Requisição Inválida"))
+                .andExpect(jsonPath("$.detail").value("Payload JSON inválido ou incompatível com o contrato"))
+                .andExpect(jsonPath("$.errors").value(containsString("Unexpected value 'PF'")));
+    }
+
+    @Test
     void deveRetornar400QuandoJuridicaSemRegimeTributacao() throws Exception {
         String payload = String.format("""
                 {

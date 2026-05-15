@@ -1,12 +1,16 @@
 package br.com.itau.geradornotafiscal.infrastructure.adapter.in.rest;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.stream.Collectors;
 
 @ControllerAdvice
@@ -30,6 +34,13 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ProblemDetail handleMessageNotReadableException(HttpMessageNotReadableException ex) {
+        ProblemDetail problemDetail = invalidRequestProblemDetail("Payload JSON inválido ou incompatível com o contrato");
+        problemDetail.setProperty("errors", resolveJsonReadError(ex));
+        return problemDetail;
+    }
+
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
     public ProblemDetail handleBusinessException(RuntimeException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
@@ -45,5 +56,56 @@ public class GlobalExceptionHandler {
         problemDetail.setType(URI.create("https://api.geradornf.com/errors/internal-server-error"));
         // Stack trace não é exposto
         return problemDetail;
+    }
+
+    private ProblemDetail invalidRequestProblemDetail(String detail) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, detail);
+        problemDetail.setTitle("Requisição Inválida");
+        problemDetail.setType(URI.create("https://api.geradornf.com/errors/invalid-request"));
+        return problemDetail;
+    }
+
+    private String resolveJsonReadError(HttpMessageNotReadableException ex) {
+        Throwable cause = ex.getMostSpecificCause();
+        InvalidFormatException invalidFormatException = findCause(ex, InvalidFormatException.class);
+        if (invalidFormatException != null) {
+            String field = invalidFormatException.getPath().stream()
+                    .map(JsonMappingException.Reference::getFieldName)
+                    .filter(java.util.Objects::nonNull)
+                    .collect(Collectors.joining("."));
+            String value = String.valueOf(invalidFormatException.getValue());
+            Class<?> targetType = invalidFormatException.getTargetType();
+
+            if (targetType.isEnum()) {
+                String acceptedValues = Arrays.stream(targetType.getEnumConstants())
+                        .map(Object::toString)
+                        .collect(Collectors.joining(", "));
+                return field + ": valor inválido '" + value + "'. Valores aceitos: " + acceptedValues;
+            }
+
+            return field + ": valor inválido '" + value + "' para o tipo " + targetType.getSimpleName();
+        }
+
+        JsonMappingException jsonMappingException = findCause(ex, JsonMappingException.class);
+        if (jsonMappingException != null && !jsonMappingException.getPath().isEmpty()) {
+            String field = jsonMappingException.getPath().stream()
+                    .map(JsonMappingException.Reference::getFieldName)
+                    .filter(java.util.Objects::nonNull)
+                    .collect(Collectors.joining("."));
+            return field + ": " + cause.getMessage();
+        }
+
+        return cause.getMessage();
+    }
+
+    private <T extends Throwable> T findCause(Throwable throwable, Class<T> type) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (type.isInstance(current)) {
+                return type.cast(current);
+            }
+            current = current.getCause();
+        }
+        return null;
     }
 }
