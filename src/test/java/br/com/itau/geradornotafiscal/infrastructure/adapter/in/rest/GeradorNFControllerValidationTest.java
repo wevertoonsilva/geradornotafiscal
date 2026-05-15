@@ -24,19 +24,19 @@ class GeradorNFControllerValidationTest {
     @MockitoBean
     private GerarNotaFiscalPort notaFiscalService;
 
-    private static final String DESTINATARIO_PF = """
+    private static final String DESTINATARIO_FISICA = """
             {
               "nome": "Pessoa Fisica",
-              "tipo_pessoa": "PF",
+              "tipo_pessoa": "FISICA",
               "documento": {"tipo": "CPF", "numero": "123.456.789-00"},
               "enderecos": [{"logradouro": "Rua A", "numero": "1", "cidade": "SP", "estado": "SP", "cep": "01310-100", "regiao": "SUDESTE", "finalidade": "ENTREGA"}]
             }
             """;
 
-    private static final String DESTINATARIO_PJ_SEM_REGIME = """
+    private static final String DESTINATARIO_JURIDICA_SEM_REGIME = """
             {
               "nome": "Empresa LTDA",
-              "tipo_pessoa": "PJ",
+              "tipo_pessoa": "JURIDICA",
               "documento": {"tipo": "CNPJ", "numero": "12.345.678/0001-90"},
               "enderecos": [{"logradouro": "Av B", "numero": "2", "cidade": "SP", "estado": "SP", "cep": "01310-100", "regiao": "SUDESTE", "finalidade": "ENTREGA"}]
             }
@@ -63,7 +63,7 @@ class GeradorNFControllerValidationTest {
     }
 
     @Test
-    void deveRetornar400QuandoPJSemRegimeTributacao() throws Exception {
+    void deveRetornar400QuandoJuridicaSemRegimeTributacao() throws Exception {
         String payload = String.format("""
                 {
                   "id_pedido": 1,
@@ -73,13 +73,13 @@ class GeradorNFControllerValidationTest {
                   "itens": [{"id_item": "1", "descricao": "Item 1", "valor_unitario": 100.00, "quantidade": 1}],
                   "destinatario": %s
                 }
-                """, DESTINATARIO_PJ_SEM_REGIME);
+                """, DESTINATARIO_JURIDICA_SEM_REGIME);
 
         mockMvc.perform(post("/v1/notas-fiscais")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors").value(containsString("destinatario.regimeTributacao: PJ deve ter regime de tributação informado")));
+                .andExpect(jsonPath("$.errors").value(containsString("destinatario.regimeTributacao: JURIDICA deve ter regime de tributação informado")));
     }
 
     @Test
@@ -93,7 +93,7 @@ class GeradorNFControllerValidationTest {
                   "itens": [{"id_item": "1", "descricao": "Item 1", "valor_unitario": 50.00, "quantidade": 1}],
                   "destinatario": %s
                 }
-                """, DESTINATARIO_PF);
+                """, DESTINATARIO_FISICA);
 
         mockMvc.perform(post("/v1/notas-fiscais")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -113,7 +113,7 @@ class GeradorNFControllerValidationTest {
                   "itens": [{"id_item": "1", "descricao": "Item 1", "valor_unitario": 100.00, "quantidade": 1}],
                   "destinatario": {
                     "nome": "Pessoa Fisica",
-                    "tipo_pessoa": "PF",
+                    "tipo_pessoa": "FISICA",
                     "documento": {"tipo": "CPF", "numero": "123.456.789-00"},
                     "enderecos": []
                   }

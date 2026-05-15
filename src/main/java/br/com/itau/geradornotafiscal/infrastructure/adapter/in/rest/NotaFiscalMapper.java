@@ -58,10 +58,7 @@ public interface NotaFiscalMapper {
     @Named("tipoPessoaToTipoPessoaEnum")
     default DestinatarioRequest.TipoPessoaEnum tipoPessoaToTipoPessoaEnum(TipoPessoa tipoPessoa) {
         if (tipoPessoa == null) return null;
-        return switch (tipoPessoa) {
-            case FISICA -> DestinatarioRequest.TipoPessoaEnum.PF;
-            case JURIDICA -> DestinatarioRequest.TipoPessoaEnum.PJ;
-        };
+        return DestinatarioRequest.TipoPessoaEnum.valueOf(tipoPessoa.name());
     }
 
     @Named("regimeTributacaoPJToRegimeTributacaoEnum")

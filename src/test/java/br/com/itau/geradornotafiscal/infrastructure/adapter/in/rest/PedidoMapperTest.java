@@ -13,15 +13,15 @@ class PedidoMapperTest {
     private final PedidoMapper mapper = Mappers.getMapper(PedidoMapper.class);
 
     @Test
-    void deveMapearTipoPessoaPfParaFisica() {
-        TipoPessoa tipoPessoa = mapper.tipoPessoaEnumToTipoPessoa(DestinatarioRequest.TipoPessoaEnum.PF);
+    void deveMapearTipoPessoaFisica() {
+        TipoPessoa tipoPessoa = mapper.tipoPessoaEnumToTipoPessoa(DestinatarioRequest.TipoPessoaEnum.FISICA);
 
         assertEquals(TipoPessoa.FISICA, tipoPessoa);
     }
 
     @Test
-    void deveMapearTipoPessoaPjParaJuridica() {
-        TipoPessoa tipoPessoa = mapper.tipoPessoaEnumToTipoPessoa(DestinatarioRequest.TipoPessoaEnum.PJ);
+    void deveMapearTipoPessoaJuridica() {
+        TipoPessoa tipoPessoa = mapper.tipoPessoaEnumToTipoPessoa(DestinatarioRequest.TipoPessoaEnum.JURIDICA);
 
         assertEquals(TipoPessoa.JURIDICA, tipoPessoa);
     }

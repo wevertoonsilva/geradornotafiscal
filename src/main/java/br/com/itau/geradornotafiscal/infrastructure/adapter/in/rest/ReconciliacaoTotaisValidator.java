@@ -15,12 +15,12 @@ public class ReconciliacaoTotaisValidator implements ConstraintValidator<Reconci
             return true;
         }
 
-        // Validação de PJ com Regime Tributação null
+        // Validação de pessoa jurídica com Regime Tributação null
         if (pedido.getDestinatario() != null &&
-            DestinatarioRequest.TipoPessoaEnum.PJ.equals(pedido.getDestinatario().getTipoPessoa()) &&
+            DestinatarioRequest.TipoPessoaEnum.JURIDICA.equals(pedido.getDestinatario().getTipoPessoa()) &&
             pedido.getDestinatario().getRegimeTributacao() == null) {
             context.disableDefaultConstraintViolation();
-            context.buildConstraintViolationWithTemplate("PJ deve ter regime de tributação informado")
+            context.buildConstraintViolationWithTemplate("JURIDICA deve ter regime de tributação informado")
                     .addPropertyNode("destinatario.regimeTributacao")
                     .addConstraintViolation();
             return false;

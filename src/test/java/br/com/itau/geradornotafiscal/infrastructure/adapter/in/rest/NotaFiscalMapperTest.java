@@ -68,7 +68,7 @@ class NotaFiscalMapperTest {
         assertEquals("Produto Teste", response.getItens().getFirst().getDescricao());
         assertEquals(new BigDecimal("18.00"), response.getItens().getFirst().getValorTributoItem());
         assertEquals("Joao Silva", response.getDestinatario().getNome());
-        assertEquals(DestinatarioRequest.TipoPessoaEnum.PF, response.getDestinatario().getTipoPessoa());
+        assertEquals(DestinatarioRequest.TipoPessoaEnum.FISICA, response.getDestinatario().getTipoPessoa());
         assertEquals(1, response.getDestinatario().getEnderecos().size());
         assertEquals("Sao Paulo", response.getDestinatario().getEnderecos().getFirst().getCidade());
     }

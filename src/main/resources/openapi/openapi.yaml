@@ -6,7 +6,7 @@ info:
     API para geração de notas fiscais a partir de pedidos.
 
     ## Regras de processamento
-    - Alíquota determinada pelo tipo de pessoa (PF/PJ) e regime tributário
+    - Alíquota determinada pelo tipo de pessoa (FISICA/JURIDICA) e regime tributário
     - Frete calculado pela região do endereço de entrega
     - Integrações externas executadas em paralelo via virtual threads
 
@@ -56,7 +56,7 @@ paths:
                       valor_unitario: 75.00
                   destinatario:
                     nome: "João Silva"
-                    tipo_pessoa: "PF"
+                    tipo_pessoa: "FISICA"
                     documento:
                       tipo: "CPF"
                       numero: "123.456.789-00"
@@ -82,7 +82,7 @@ paths:
                       valor_unitario: 5000.00
                   destinatario:
                     nome: "Empresa LTDA"
-                    tipo_pessoa: "PJ"
+                    tipo_pessoa: "JURIDICA"
                     regime_tributacao: "SIMPLES_NACIONAL"
                     documento:
                       tipo: "CNPJ"
@@ -186,12 +186,12 @@ components:
           example: "João Silva"
         tipo_pessoa:
           type: string
-          enum: [PF, PJ]
-          example: "PF"
+          enum: [FISICA, JURIDICA]
+          example: "FISICA"
         regime_tributacao:
           type: string
-          enum: [SIMPLES_NACIONAL, LUCRO_REAL, LUCRO_PRESUMIDO]
-          description: Obrigatório quando tipo_pessoa = PJ
+          enum: [SIMPLES_NACIONAL, LUCRO_REAL, LUCRO_PRESUMIDO, OUTROS]
+          description: Obrigatório quando tipo_pessoa = JURIDICA
         documento:
           $ref: '#/components/schemas/DocumentoRequest'
         enderecos:

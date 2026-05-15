@@ -50,10 +50,7 @@ public interface PedidoMapper {
     @Named("tipoPessoaEnumToTipoPessoa")
     default TipoPessoa tipoPessoaEnumToTipoPessoa(DestinatarioRequest.TipoPessoaEnum tipoPessoaEnum) {
         if (tipoPessoaEnum == null) return null;
-        return switch (tipoPessoaEnum) {
-            case PF -> TipoPessoa.FISICA;
-            case PJ -> TipoPessoa.JURIDICA;
-        };
+        return TipoPessoa.valueOf(tipoPessoaEnum.getValue());
     }
 
     @Named("regimeTributacaoEnumToRegimeTributacaoPJ")
