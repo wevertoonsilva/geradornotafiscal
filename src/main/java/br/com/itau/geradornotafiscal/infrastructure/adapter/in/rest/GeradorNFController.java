@@ -1,28 +1,36 @@
 package br.com.itau.geradornotafiscal.infrastructure.adapter.in.rest;
 
 import br.com.itau.geradornotafiscal.application.port.in.GerarNotaFiscalPort;
-import br.com.itau.geradornotafiscal.domain.model.NotaFiscal;
-import jakarta.validation.Valid;
+import br.com.itau.geradornotafiscal.domain.model.Pedido;
+import br.com.itau.geradornotafiscal.infrastructure.adapter.in.rest.generated.V1Api;
+import br.com.itau.geradornotafiscal.infrastructure.adapter.in.rest.generated.model.NotaFiscal;
+import br.com.itau.geradornotafiscal.infrastructure.adapter.in.rest.generated.model.PedidoRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+
 @RestController
-@RequestMapping("/v1/notas-fiscais")
-public class GeradorNFController {
+public class GeradorNFController implements V1Api {
 
-    private final GerarNotaFiscalPort notaFiscalService;
+    private final GerarNotaFiscalPort gerarNotaFiscalPort;
+    private final PedidoMapper pedidoMapper;
+    private final NotaFiscalMapper notaFiscalMapper;
 
-    public GeradorNFController(GerarNotaFiscalPort notaFiscalService) {
-        this.notaFiscalService = notaFiscalService;
+    public GeradorNFController(
+            GerarNotaFiscalPort gerarNotaFiscalPort,
+            PedidoMapper pedidoMapper,
+            NotaFiscalMapper notaFiscalMapper) {
+        this.gerarNotaFiscalPort = gerarNotaFiscalPort;
+        this.pedidoMapper = pedidoMapper;
+        this.notaFiscalMapper = notaFiscalMapper;
     }
 
-    @PostMapping
-    public ResponseEntity<NotaFiscal> gerarNotaFiscal(
-            @Valid @RequestBody PedidoRequest pedidoRequest) {
-        NotaFiscal notaFiscal = notaFiscalService.gerarNotaFiscal(pedidoRequest.toDomain());
-        return ResponseEntity.ok(notaFiscal);
+    @Override
+    public ResponseEntity<NotaFiscal> gerarNotaFiscal(PedidoRequest pedidoRequest) {
+        Pedido pedido = pedidoMapper.toDomain(pedidoRequest);
+        br.com.itau.geradornotafiscal.domain.model.NotaFiscal notaFiscalDomain = gerarNotaFiscalPort.gerarNotaFiscal(pedido);
+        NotaFiscal response = notaFiscalMapper.toResponse(notaFiscalDomain);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

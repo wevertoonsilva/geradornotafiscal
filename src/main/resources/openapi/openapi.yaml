@@ -1,0 +1,283 @@
+openapi: 3.1.0
+
+info:
+  title: Gerador de Nota Fiscal API
+  description: |
+    API para geração de notas fiscais a partir de pedidos.
+
+    ## Regras de processamento
+    - Alíquota determinada pelo tipo de pessoa (PF/PJ) e regime tributário
+    - Frete calculado pela região do endereço de entrega
+    - Integrações externas executadas em paralelo via virtual threads
+
+    ## Limitações conhecidas
+    - Sem idempotência — retries podem gerar notas duplicadas
+    - Sem persistência — nota não recuperável após falha
+    - Integrações fire-and-forget — falhas são logadas mas não alteram a resposta
+  version: 1.0.0
+  contact:
+    name: Time Gerador Nota Fiscal
+
+servers:
+  - url: http://localhost:8080
+    description: Desenvolvimento local
+  - url: http://geradornotafiscal-alb.us-east-1.elb.amazonaws.com
+    description: Ambiente AWS
+
+tags:
+  - name: NotaFiscal
+    description: Geração e consulta de notas fiscais
+
+paths:
+  /v1/notas-fiscais:
+    post:
+      tags: [NotaFiscal]
+      summary: Gerar nota fiscal
+      description: Gera uma nota fiscal a partir de um pedido. As integrações externas são executadas em paralelo de forma assíncrona.
+      operationId: gerarNotaFiscal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PedidoRequest'
+            examples:
+              pessoa_fisica:
+                summary: Pedido de pessoa física
+                value:
+                  id_pedido: 1
+                  data: "2026-05-15"
+                  valor_total_itens: 150.00
+                  valor_frete: 20.00
+                  itens:
+                    - id_item: "PROD-001"
+                      descricao: "Produto Teste"
+                      quantidade: 2
+                      valor_unitario: 75.00
+                  destinatario:
+                    nome: "João Silva"
+                    tipo_pessoa: "PF"
+                    documento:
+                      tipo: "CPF"
+                      numero: "123.456.789-00"
+                    enderecos:
+                      - logradouro: "Rua Teste"
+                        numero: "123"
+                        cidade: "São Paulo"
+                        estado: "SP"
+                        cep: "01310-100"
+                        regiao: "SUDESTE"
+                        finalidade: "ENTREGA"
+              pessoa_juridica:
+                summary: Pedido de pessoa jurídica — Simples Nacional
+                value:
+                  id_pedido: 2
+                  data: "2026-05-15"
+                  valor_total_itens: 5000.00
+                  valor_frete: 150.00
+                  itens:
+                    - id_item: "PROD-002"
+                      descricao: "Equipamento Industrial"
+                      quantidade: 1
+                      valor_unitario: 5000.00
+                  destinatario:
+                    nome: "Empresa LTDA"
+                    tipo_pessoa: "PJ"
+                    regime_tributacao: "SIMPLES_NACIONAL"
+                    documento:
+                      tipo: "CNPJ"
+                      numero: "12.345.678/0001-90"
+                    enderecos:
+                      - logradouro: "Av. Industrial"
+                        numero: "456"
+                        cidade: "Manaus"
+                        estado: "AM"
+                        cep: "69000-000"
+                        regiao: "NORTE"
+                        finalidade: "ENTREGA"
+      responses:
+        '201':
+          description: Nota fiscal gerada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotaFiscal'
+        '400':
+          description: Payload inválido
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              examples:
+                campo_obrigatorio:
+                  value:
+                    type: "about:blank"
+                    title: "Bad Request"
+                    status: 400
+                    detail: "destinatario: não deve ser nulo"
+                totais_inconsistentes:
+                  value:
+                    type: "about:blank"
+                    title: "Bad Request"
+                    status: 400
+                    detail: "valor_total_itens diverge da soma dos itens"
+        '500':
+          description: Erro interno
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+components:
+  schemas:
+
+    PedidoRequest:
+      type: object
+      x-class-extra-annotation: "@br.com.itau.geradornotafiscal.infrastructure.adapter.in.rest.ReconciliacaoTotais"
+      required: [id_pedido, data, valor_total_itens, valor_frete, itens, destinatario]
+      properties:
+        id_pedido:
+          type: integer
+          example: 1
+        data:
+          type: string
+          format: date
+          example: "2026-05-15"
+        valor_total_itens:
+          type: number
+          description: Deve ser igual à soma de (valorUnitario × quantidade)
+          example: 150.00
+        valor_frete:
+          type: number
+          example: 20.00
+        itens:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ItemRequest'
+        destinatario:
+          $ref: '#/components/schemas/DestinatarioRequest'
+
+    ItemRequest:
+      type: object
+      required: [id_item, quantidade, valor_unitario]
+      properties:
+        id_item:
+          type: string
+          example: "PROD-001"
+        descricao:
+          type: string
+          example: "Produto Teste"
+        quantidade:
+          type: integer
+          minimum: 1
+          example: 2
+        valor_unitario:
+          type: number
+          minimum: 0.01
+          example: 75.00
+
+    DestinatarioRequest:
+      type: object
+      required: [nome, tipo_pessoa, documento, enderecos]
+      properties:
+        nome:
+          type: string
+          example: "João Silva"
+        tipo_pessoa:
+          type: string
+          enum: [PF, PJ]
+          example: "PF"
+        regime_tributacao:
+          type: string
+          enum: [SIMPLES_NACIONAL, LUCRO_REAL, LUCRO_PRESUMIDO]
+          description: Obrigatório quando tipo_pessoa = PJ
+        documento:
+          $ref: '#/components/schemas/DocumentoRequest'
+        enderecos:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/EnderecoRequest'
+
+    DocumentoRequest:
+      type: object
+      required: [tipo, numero]
+      properties:
+        tipo:
+          type: string
+          enum: [CPF, CNPJ]
+        numero:
+          type: string
+          example: "123.456.789-00"
+
+    EnderecoRequest:
+      type: object
+      required: [logradouro, numero, cidade, estado, cep, regiao, finalidade]
+      properties:
+        logradouro:
+          type: string
+        numero:
+          type: string
+        cidade:
+          type: string
+        estado:
+          type: string
+        cep:
+          type: string
+        regiao:
+          type: string
+          enum: [NORTE, NORDESTE, CENTRO_OESTE, SUDESTE, SUL]
+        finalidade:
+          type: string
+          enum: [ENTREGA, COBRANCA]
+
+    NotaFiscal:
+      type: object
+      properties:
+        idNotaFiscal:
+          type: string
+          format: uuid
+        idPedido:
+          type: integer
+        data:
+          type: string
+          format: date-time
+        valorTotalItens:
+          type: number
+        valorFrete:
+          type: number
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemNotaFiscal'
+        destinatario:
+          $ref: '#/components/schemas/DestinatarioRequest'
+
+    ItemNotaFiscal:
+      type: object
+      properties:
+        idItem:
+          type: string
+        descricao:
+          type: string
+        valorUnitario:
+          type: number
+        quantidade:
+          type: integer
+        valorTributoItem:
+          type: number
+
+    ProblemDetail:
+      type: object
+      description: RFC 7807 Problem Details
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
