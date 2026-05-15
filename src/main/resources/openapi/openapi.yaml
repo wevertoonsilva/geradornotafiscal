@@ -46,29 +46,29 @@ paths:
                 summary: Pedido de pessoa física
                 value:
                   id_pedido: 1
-                  data: "2026-05-15"
-                  valor_total_itens: 150.00
-                  valor_frete: 20.00
+                  data: "2022-05-01"
+                  valor_total_itens: 100.00
+                  valor_frete: 10.00
                   itens:
-                    - id_item: "PROD-001"
-                      descricao: "Produto Teste"
+                    - id_item: "1"
+                      descricao: "Teclado USB"
                       quantidade: 2
-                      valor_unitario: 75.00
+                      valor_unitario: 50.00
                   destinatario:
-                    nome: "João Silva"
+                    nome: "John Doe"
                     tipo_pessoa: "FISICA"
                     documentos:
                       - tipo: "CPF"
-                        numero: "123.456.789-00"
+                        numero: "88740347095"
                     enderecos:
-                      - logradouro: "Rua Teste"
-                        numero: "123"
-                        complemento: "Apto 10"
-                        bairro: "Centro"
+                      - logradouro: "Av do estado"
+                        numero: "5533"
+                        complemento: "4 anndar b"
+                        bairro: "Mooca"
                         cidade: "São Paulo"
                         estado: "SP"
                         pais: "Brasil"
-                        cep: "01310-100"
+                        cep: "03105003"
                         regiao: "SUDESTE"
                         finalidade: "ENTREGA"
               pessoa_juridica:
@@ -141,6 +141,33 @@ components:
       type: object
       x-class-extra-annotation: "@br.com.itau.geradornotafiscal.infrastructure.adapter.in.rest.ReconciliacaoTotais"
       required: [id_pedido, data, valor_total_itens, valor_frete, itens, destinatario]
+      example:
+        id_pedido: 1
+        data: "2022-05-01"
+        valor_total_itens: 100.0
+        valor_frete: 10.0
+        itens:
+          - id_item: "1"
+            descricao: "Teclado USB"
+            valor_unitario: 50
+            quantidade: 2
+        destinatario:
+          nome: "John Doe"
+          tipo_pessoa: "FISICA"
+          documentos:
+            - tipo: "CPF"
+              numero: "88740347095"
+          enderecos:
+            - logradouro: "Av do estado"
+              numero: "5533"
+              complemento: "4 anndar b"
+              bairro: "Mooca"
+              cidade: "São Paulo"
+              estado: "SP"
+              pais: "Brasil"
+              cep: "03105003"
+              finalidade: "ENTREGA"
+              regiao: "SUDESTE"
       properties:
         id_pedido:
           type: integer
@@ -148,14 +175,14 @@ components:
         data:
           type: string
           format: date
-          example: "2026-05-15"
+          example: "2022-05-01"
         valor_total_itens:
           type: number
           description: Deve ser igual à soma de (valorUnitario × quantidade)
-          example: 150.00
+          example: 100.00
         valor_frete:
           type: number
-          example: 20.00
+          example: 10.00
         itens:
           type: array
           minItems: 1
@@ -170,10 +197,10 @@ components:
       properties:
         id_item:
           type: string
-          example: "PROD-001"
+          example: "1"
         descricao:
           type: string
-          example: "Produto Teste"
+          example: "Teclado USB"
         quantidade:
           type: integer
           minimum: 1
@@ -181,7 +208,7 @@ components:
         valor_unitario:
           type: number
           minimum: 0.01
-          example: 75.00
+          example: 50.00
 
     DestinatarioRequest:
       type: object
@@ -189,7 +216,7 @@ components:
       properties:
         nome:
           type: string
-          example: "João Silva"
+          example: "John Doe"
         tipo_pessoa:
           type: string
           enum: [FISICA, JURIDICA]
@@ -216,9 +243,10 @@ components:
         tipo:
           type: string
           enum: [CPF, CNPJ]
+          example: "CPF"
         numero:
           type: string
-          example: "123.456.789-00"
+          example: "88740347095"
 
     EnderecoRequest:
       type: object
@@ -226,26 +254,36 @@ components:
       properties:
         logradouro:
           type: string
+          example: "Av do estado"
         numero:
           type: string
+          example: "5533"
         complemento:
           type: string
+          example: "4 anndar b"
         bairro:
           type: string
+          example: "Mooca"
         cidade:
           type: string
+          example: "São Paulo"
         estado:
           type: string
+          example: "SP"
         pais:
           type: string
+          example: "Brasil"
         cep:
           type: string
+          example: "03105003"
         regiao:
           type: string
           enum: [NORTE, NORDESTE, CENTRO_OESTE, SUDESTE, SUL]
+          example: "SUDESTE"
         finalidade:
           type: string
           enum: [COBRANCA_ENTREGA, ENTREGA, COBRANCA, OUTROS]
+          example: "ENTREGA"
 
     NotaFiscal:
       type: object
