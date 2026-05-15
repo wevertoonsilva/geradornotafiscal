@@ -12,6 +12,7 @@ import lombok.*;
 @NoArgsConstructor
 public class NotaFiscal {
     private String idNotaFiscal;
+    private int idPedido;
     private LocalDateTime data;
     private BigDecimal valorTotalItens;
     private BigDecimal valorFrete;

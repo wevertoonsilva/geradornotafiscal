@@ -18,6 +18,7 @@ public class NotaFiscalFactory {
 
         return NotaFiscal.builder()
                 .idNotaFiscal(idNotaFiscal)
+                .idPedido(pedido.getIdPedido())
                 .data(LocalDateTime.now())
                 .valorTotalItens(pedido.getValorTotalItens())
                 .valorFrete(freteCalculado)
