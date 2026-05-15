@@ -16,6 +16,9 @@ public interface NotaFiscalMapper {
 
     @Mapping(source = "idNotaFiscal", target = "idNotaFiscal", qualifiedByName = "stringToUUID")
     @Mapping(source = "data", target = "data", qualifiedByName = "localDateTimeToOffsetDateTime")
+    @Mapping(target = "destinatario", ignore = true)
+    @Mapping(target = "itens", ignore = true)
+    @Mapping(target = "idPedido", ignore = true)
     NotaFiscal toResponse(br.com.itau.geradornotafiscal.domain.model.NotaFiscal domain);
 
     @Named("stringToUUID")
