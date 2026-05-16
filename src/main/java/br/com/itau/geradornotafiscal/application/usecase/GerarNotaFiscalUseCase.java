@@ -96,6 +96,7 @@ public class GerarNotaFiscalUseCase implements GerarNotaFiscalPort{
 					estoquePort.enviarNotaFiscalParaBaixaEstoque(notaFiscal);
 				} catch (Exception e) {
 					log.error("Falha ao baixar estoque - idNota={}", notaFiscal.getIdNotaFiscal(), e);
+					meterRegistry.counter("integracao.falha", "integracao", "estoque").increment();
 				}
 			});
 			executor.submit(() -> {
@@ -103,6 +104,7 @@ public class GerarNotaFiscalUseCase implements GerarNotaFiscalPort{
 					registroPort.registrarNotaFiscal(notaFiscal);
 				} catch (Exception e) {
 					log.error("Falha ao registrar nota fiscal - idNota={}", notaFiscal.getIdNotaFiscal(), e);
+					meterRegistry.counter("integracao.falha", "integracao", "registro").increment();
 				}
 			});
 			executor.submit(() -> {
@@ -110,6 +112,7 @@ public class GerarNotaFiscalUseCase implements GerarNotaFiscalPort{
 					entregaPort.agendarEntrega(notaFiscal);
 				} catch (Exception e) {
 					log.error("Falha ao agendar entrega - idNota={}", notaFiscal.getIdNotaFiscal(), e);
+					meterRegistry.counter("integracao.falha", "integracao", "entrega").increment();
 				}
 			});
 			executor.submit(() -> {
@@ -117,6 +120,7 @@ public class GerarNotaFiscalUseCase implements GerarNotaFiscalPort{
 					financeiroPort.enviarNotaFiscalParaContasReceber(notaFiscal);
 				} catch (Exception e) {
 					log.error("Falha ao enviar para o financeiro - idNota={}", notaFiscal.getIdNotaFiscal(), e);
+					meterRegistry.counter("integracao.falha", "integracao", "financeiro").increment();
 				}
 			});
 		}

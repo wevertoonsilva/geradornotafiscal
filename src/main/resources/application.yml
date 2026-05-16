@@ -2,10 +2,21 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics
   endpoint:
     health:
       show-details: when-authorized
+  statsd:
+    metrics:
+      export:
+        enabled: true
+        flavor: datadog
+        host: ${DD_AGENT_HOST:localhost}
+        port: 8125
+  metrics:
+    tags:
+      service: geradornotafiscal
+      env: ${DD_ENV:dev}
 
 springdoc:
   api-docs:
