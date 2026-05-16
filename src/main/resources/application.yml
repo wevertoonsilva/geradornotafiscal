@@ -13,6 +13,7 @@ management:
         api-key: ${NEW_RELIC_LICENSE_KEY}
         account-id: ${NEW_RELIC_ACCOUNT_ID}
         uri: https://metric-api.newrelic.com/metric/v1
+        client-provider-type: insights-api
   metrics:
     tags:
       service: geradornotafiscal
