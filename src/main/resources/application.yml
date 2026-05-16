@@ -6,17 +6,17 @@ management:
   endpoint:
     health:
       show-details: when-authorized
-  statsd:
+  newrelic:
     metrics:
       export:
         enabled: true
-        flavor: datadog
-        host: ${DD_AGENT_HOST:localhost}
-        port: 8125
+        api-key: ${NEW_RELIC_LICENSE_KEY}
+        account-id: ${NEW_RELIC_ACCOUNT_ID}
+        uri: https://metric-api.newrelic.com/metric/v1
   metrics:
     tags:
       service: geradornotafiscal
-      env: ${DD_ENV:dev}
+      env: ${NEW_RELIC_ENVIRONMENT:dev}
 
 springdoc:
   api-docs:

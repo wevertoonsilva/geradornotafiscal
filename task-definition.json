@@ -15,9 +15,17 @@
         { "containerPort": 8080, "protocol": "tcp" }
       ],
       "environment": [
-        { "name": "SPRING_PROFILES_ACTIVE", "value": "prod" },
-        { "name": "DD_AGENT_HOST",          "value": "localhost" },
-        { "name": "DD_TRACE_AGENT_PORT",    "value": "8126" }
+        { "name": "SPRING_PROFILES_ACTIVE",  "value": "prod"              },
+        { "name": "NEW_RELIC_APP_NAME",      "value": "geradornotafiscal" },
+        { "name": "NEW_RELIC_LOG_LEVEL",     "value": "info"              },
+        { "name": "NEW_RELIC_ACCOUNT_ID",    "value": "8065224"           },
+        { "name": "NEW_RELIC_ENVIRONMENT",   "value": "prod"              }
+      ],
+      "secrets": [
+        {
+          "name": "NEW_RELIC_LICENSE_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:298660930243:secret:newrelic/license-key-s6dQFC"
+        }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
@@ -33,43 +41,6 @@
         "timeout": 5,
         "retries": 3,
         "startPeriod": 60
-      },
-      "dependsOn": [
-        { "containerName": "datadog-agent", "condition": "START" }
-      ]
-    },
-    {
-      "name": "datadog-agent",
-      "image": "public.ecr.aws/datadog/agent:latest",
-      "essential": false,
-      "portMappings": [
-        { "containerPort": 8126, "protocol": "tcp" },
-        { "containerPort": 8125, "protocol": "udp" }
-      ],
-      "environment": [
-        { "name": "ECS_FARGATE",                          "value": "true" },
-        { "name": "DD_SITE",                              "value": "datadoghq.com" },
-        { "name": "DD_APM_ENABLED",                       "value": "true" },
-        { "name": "DD_APM_NON_LOCAL_TRAFFIC",             "value": "true" },
-        { "name": "DD_LOGS_ENABLED",                      "value": "true" },
-        { "name": "DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL", "value": "true" },
-        { "name": "DD_PROCESS_AGENT_ENABLED",             "value": "true" },
-        { "name": "DD_DOGSTATSD_NON_LOCAL_TRAFFIC",       "value": "true" },
-        { "name": "DD_CONTAINER_EXCLUDE_LOGS",            "value": "name:datadog-agent" }
-      ],
-      "secrets": [
-        {
-          "name": "DD_API_KEY",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:298660930243:secret:datadog/api-key-UY5cU6"
-        }
-      ],
-      "logConfiguration": {
-        "logDriver": "awslogs",
-        "options": {
-          "awslogs-group":         "/ecs/datadog-agent",
-          "awslogs-region":        "us-east-1",
-          "awslogs-stream-prefix": "ecs"
-        }
       }
     }
   ]

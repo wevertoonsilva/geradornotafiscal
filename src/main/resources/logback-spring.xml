@@ -16,15 +16,18 @@
         </root>
     </springProfile>
 
-    <!-- Profile prod: JSON estruturado para o Datadog -->
+    <!-- Profile prod: JSON estruturado para o New Relic -->
     <springProfile name="prod">
         <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-                <customFields>{"env":"prod","service":"geradornotafiscal","version":"1.0.0"}</customFields>
-                <includeMdcKeyName>dd.trace_id</includeMdcKeyName>
-                <includeMdcKeyName>dd.span_id</includeMdcKeyName>
-                <includeMdcKeyName>dd.service</includeMdcKeyName>
-                <includeMdcKeyName>dd.env</includeMdcKeyName>
+                <provider class="net.logstash.logback.composite.loggingevent.MessageJsonProvider">
+                    <messagePattern>%maskedMsg</messagePattern>
+                </provider>
+                <!-- Campos injetados pelo New Relic agent via MDC -->
+                <includeMdcKeyName>trace.id</includeMdcKeyName>
+                <includeMdcKeyName>span.id</includeMdcKeyName>
+                <includeMdcKeyName>entity.name</includeMdcKeyName>
+                <includeMdcKeyName>entity.type</includeMdcKeyName>
             </encoder>
         </appender>
         <root level="INFO">

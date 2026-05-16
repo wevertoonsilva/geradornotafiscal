@@ -64,9 +64,10 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!-- New Relic Micrometer Registry -->
         <dependency>
             <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-statsd</artifactId>
+            <artifactId>micrometer-registry-new-relic</artifactId>
         </dependency>
 
         <dependency>
