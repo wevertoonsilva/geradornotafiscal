@@ -11,8 +11,8 @@ management:
       export:
         enabled: true
         api-key: ${NEW_RELIC_LICENSE_KEY}
-        account-id: ${NEW_RELIC_ACCOUNT_ID}
-        uri: https://metric-api.newrelic.com/metric/v1
+        account-id: ${NEW_RELIC_ACCOUNT_ID}=
+        uri: https://insights-collector.newrelic.com/v1/accounts/8065224/events
         client-provider-type: insights-api
   metrics:
     tags:
